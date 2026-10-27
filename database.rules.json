@@ -1,0 +1,318 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "room": {
+      ".read": "auth != null",
+      "state": {
+        ".write": "auth != null && newData.exists()",
+        ".validate": "newData.hasChildren(['round', 'revealed']) && newData.child('round').isNumber() && newData.child('revealed').isBoolean() && ((newData.child('revealed').val() === true && ((data.exists() && newData.child('round').val() === data.child('round').val()) || (!data.exists() && newData.child('round').val() === 0))) || (newData.child('revealed').val() === false && !newData.parent().child('votes').exists() && ((data.exists() && newData.child('round').val() === data.child('round').val() + 1) || (!data.exists() && newData.child('round').val() === 1))))",
+        "round": {
+          ".validate": true
+        },
+        "revealed": {
+          ".validate": true
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      "votes": {
+        ".write": "auth != null && !newData.exists() && ((data.parent().child('state').exists() && newData.parent().child('state/round').val() === data.parent().child('state/round').val() + 1) || (!data.parent().child('state').exists() && newData.parent().child('state/round').val() === 1))",
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && root.child('room/state/revealed').val() !== true",
+          ".validate": "newData.hasChildren(['value', 'round']) && ((root.child('room/state').exists() && newData.child('round').val() === root.child('room/state/round').val()) || (!root.child('room/state').exists() && newData.child('round').val() === 0))",
+          "value": {
+            ".validate": "newData.isString() && newData.val().matches(/^(\\?|0|1|2|3|5|8|scissors)$/)"
+          },
+          "round": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "participants": {
+        "$uid": {
+          ".write": "auth != null && (auth.uid === $uid || (!newData.exists() && (!data.child('lastActive').exists() || data.child('lastActive').val() < now - 1200000)))",
+          "lastActive": {
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "observer": {
+            ".validate": "newData.isBoolean()"
+          },
+          "pseudo": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+          },
+          "connections": {
+            "$connId": {
+              ".validate": "newData.val() === true"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "settings": {
+        "autoReveal": {
+          ".write": "auth != null",
+          ".validate": "newData.isBoolean()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      "pseudos": {
+        "$key": {
+          ".write": "auth != null && ((newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid || !root.child('room/participants').child(data.val()).child('connections').exists())) || (!newData.exists() && data.val() === auth.uid))",
+          ".validate": "newData.isString() && $key.length <= 200"
+        }
+      }
+    },
+    "skillMatrix": {
+      "admins": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid"
+        }
+      },
+      "teams": {
+        ".read": "auth != null && root.child('skillMatrix/admins').child(auth.uid).exists()",
+        "$teamId": {
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('skillMatrix/admins').child(auth.uid).exists() || (!newData.exists() && (data.child('deletedAt').isNumber() && data.child('deletedAt').val() < now - 7776000000)))",
+          ".validate": "$teamId.matches(/^[a-z0-9]{12}$/) && newData.hasChildren(['name', 'createdAt'])",
+          "name": {
+            ".write": "auth != null && data.exists() && !data.parent().child('deletedAt').exists()",
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 50"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || (!data.exists() && newData.val() === now))"
+          },
+          "deletedAt": {
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "teamData": {
+        ".read": "auth != null && root.child('skillMatrix/admins').child(auth.uid).exists()",
+        "$teamId": {
+          ".read": "auth != null",
+          ".write": "auth != null && !newData.exists() && (root.child('skillMatrix/admins').child(auth.uid).exists() || (root.child('skillMatrix/teams').child($teamId).child('deletedAt').isNumber() && root.child('skillMatrix/teams').child($teamId).child('deletedAt').val() < now - 7776000000) || !root.child('skillMatrix/teams').child($teamId).exists())",
+          "skills": {
+            "$skillId": {
+              ".write": "auth != null && (newData.exists() || root.child('skillMatrix/admins').child(auth.uid).exists() || (data.child('deletedAt').isNumber() && data.child('deletedAt').val() < now - 7776000000))",
+              ".validate": "newData.hasChildren(['label', 'refTarget', 'backupTarget', 'order']) && newData.parent().parent().parent().parent().child('teams').child($teamId).exists()",
+              "label": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 60"
+              },
+              "refTarget": {
+                ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1 || newData.val() === 2 || newData.val() === 3)"
+              },
+              "backupTarget": {
+                ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1 || newData.val() === 2 || newData.val() === 3)"
+              },
+              "order": {
+                ".validate": "newData.isNumber()"
+              },
+              "deletedAt": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "members": {
+            "$memberId": {
+              ".write": "auth != null && (newData.exists() || root.child('skillMatrix/admins').child(auth.uid).exists() || (data.child('deletedAt').isNumber() && data.child('deletedAt').val() < now - 7776000000))",
+              ".validate": "newData.hasChildren(['name', 'order']) && newData.parent().parent().parent().parent().child('teams').child($teamId).exists()",
+              "name": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30"
+              },
+              "order": {
+                ".validate": "newData.isNumber()"
+              },
+              "deletedAt": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "ratings": {
+            ".write": "auth != null && !newData.exists()"
+          },
+          "scale": {
+            ".write": "auth != null && newData.exists()",
+            ".validate": "newData.val() === 2"
+          },
+          "levels": {
+            "$memberId": {
+              ".write": "auth != null && !newData.exists() && !newData.parent().parent().child('members').child($memberId).exists()",
+              "$skillId": {
+                ".write": "auth != null",
+                ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1 || newData.val() === 2 || newData.val() === 3) && newData.parent().parent().parent().child('members').child($memberId).exists() && newData.parent().parent().parent().child('skills').child($skillId).exists()"
+              }
+            }
+          },
+          "noProgress": {
+            "$memberId": {
+              ".write": "auth != null && !newData.exists() && !newData.parent().parent().child('members').child($memberId).exists()",
+              "$skillId": {
+                ".write": "auth != null",
+                ".validate": "newData.val() === true && newData.parent().parent().parent().child('members').child($memberId).exists() && newData.parent().parent().parent().child('skills').child($skillId).exists()"
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "wheelOfChance": {
+      ".read": "auth != null",
+      "teamNames": {
+        "$key": {
+          ".write": "auth != null && (!data.exists() || !newData.exists() || data.val() === newData.val())",
+          ".validate": "newData.isString() && $key.length <= 200 && newData.parent().parent().child('teams').child(newData.val()).exists()"
+        }
+      },
+      "teams": {
+        "$teamId": {
+          ".write": "auth != null && ((!data.exists() && newData.exists()) || (!newData.exists() && data.child('deletedAt').isNumber()))",
+          ".validate": "$teamId.matches(/^[a-z0-9]{12}$/) && newData.hasChildren(['name', 'createdAt'])",
+          "name": {
+            ".write": "auth != null && data.exists() && !data.parent().child('deletedAt').exists()",
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 50"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || (!data.exists() && newData.val() === now))"
+          },
+          "deletedAt": {
+            ".write": "auth != null && data.parent().exists()",
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "members": {
+            "$memberId": {
+              ".write": "auth != null && data.parent().parent().exists() && !data.parent().parent().child('deletedAt').exists()",
+              ".validate": "$memberId.matches(/^[a-z0-9]{12}$/) && newData.hasChildren(['name', 'withdrawn', 'createdAt'])",
+              "name": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 50"
+              },
+              "withdrawn": {
+                ".validate": "newData.isBoolean()"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || (!data.exists() && newData.val() === now))"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "memberNames": {
+            "$key": {
+              ".write": "auth != null && data.parent().parent().exists() && !data.parent().parent().child('deletedAt').exists() && (!data.exists() || !newData.exists() || data.val() === newData.val())",
+              ".validate": "newData.isString() && $key.length <= 200 && newData.parent().parent().child('members').child(newData.val()).exists()"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "movingMotivators": {
+      "keys": {
+        "$sid": {
+          ".write": "auth != null && ((!data.exists() && newData.exists() && !root.child('movingMotivators/sessions/' + $sid).exists()) || (!newData.exists() && root.child('movingMotivators/sessions/' + $sid + '/owners/' + auth.uid).exists()))",
+          ".validate": "$sid.matches(/^[a-z0-9]{12}$/) && newData.isString() && newData.val().matches(/^[a-z0-9]{24}$/)"
+        }
+      },
+      "sessions": {
+        "$sid": {
+          ".write": "auth != null && !newData.exists() && root.child('movingMotivators/sessions/' + $sid + '/owners/' + auth.uid).exists()",
+          ".validate": "$sid.matches(/^[a-z0-9]{12}$/) && newData.child('meta').exists()",
+          "meta": {
+            ".read": "auth != null",
+            ".write": "auth != null && ((!data.exists() && newData.exists() && newData.parent().child('owners').child(auth.uid).exists()) || (data.exists() && newData.exists() && root.child('movingMotivators/sessions/' + $sid + '/owners/' + auth.uid).exists()))",
+            ".validate": "newData.hasChildren(['title', 'mode', 'named', 'closed', 'createdAt'])",
+            "title": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 80"
+            },
+            "mode": {
+              ".validate": "newData.isString() && (newData.val() === 'today' || newData.val() === 'change')"
+            },
+            "change": {
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "named": {
+              ".validate": "newData.isBoolean() && (!data.exists() || newData.val() === data.val())"
+            },
+            "closed": {
+              ".validate": "newData.isBoolean()"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && ((data.exists() && newData.val() === data.val()) || (!data.exists() && newData.val() === now))"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "owners": {
+            ".read": "auth != null && data.child(auth.uid).exists()",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && newData.exists()",
+              ".validate": "newData.isString() && newData.val() === newData.parent().parent().parent().parent().child('keys').child($sid).val()"
+            }
+          },
+          "participants": {
+            ".read": "auth != null && data.parent().child('owners').child(auth.uid).exists()",
+            "$uid": {
+              ".read": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && ((auth.uid === $uid && (!newData.exists() || root.child('movingMotivators/sessions/' + $sid + '/meta/closed').val() === false)) || (!newData.exists() && root.child('movingMotivators/sessions/' + $sid + '/owners/' + auth.uid).exists()))",
+              ".validate": "newData.hasChildren(['name', 'order', 'levels', 'updatedAt'])",
+              "name": {
+                ".validate": "newData.isString() && newData.val().length <= 50 && ((root.child('movingMotivators/sessions/' + $sid + '/meta/named').val() === true && newData.val().length >= 1) || (root.child('movingMotivators/sessions/' + $sid + '/meta/named').val() === false && newData.val() === ''))"
+              },
+              "order": {
+                ".validate": "newData.isString() && newData.val().matches(/^((curiosity|honor|acceptance|mastery|power|freedom|relatedness|order|goal|status),){9}(curiosity|honor|acceptance|mastery|power|freedom|relatedness|order|goal|status)$/)"
+              },
+              "levels": {
+                ".validate": "newData.hasChildren(['curiosity', 'honor', 'acceptance', 'mastery', 'power', 'freedom', 'relatedness', 'order', 'goal', 'status'])",
+                "$motivator": {
+                  ".validate": "$motivator.matches(/^(curiosity|honor|acceptance|mastery|power|freedom|relatedness|order|goal|status)$/) && newData.isNumber() && (newData.val() === -2 || newData.val() === -1 || newData.val() === 0 || newData.val() === 1 || newData.val() === 2)"
+                }
+              },
+              "updatedAt": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    }
+  }
+}

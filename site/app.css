@@ -306,7 +306,7 @@ textarea.field { resize: vertical; line-height: 1.45; }
   }
   .mcard--board::before { inset: 0 auto 0 0; width: 6px; height: auto; }
   .mcard--board .mcard-icon { width: 30px; }
-  .mcard--board .mcard-name { font-size: 16px; text-align: left; }
+  .mcard--board .mcard-name { font-size: 15px; text-align: left; overflow-wrap: normal; hyphens: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .rankboard { grid-template-areas: "more" "row" "less"; gap: 10px; }
   .rankboard .axis { display: contents; }
@@ -374,6 +374,91 @@ textarea.field { resize: vertical; line-height: 1.45; }
 .notes { min-height: 110px; }
 .print-report { display: none; }
 
+/* ---------- Séance d'équipe : participant ---------- */
+
+.team-banner { background: var(--accent-soft); border-bottom: 1px solid var(--line); }
+.team-banner[data-status="missing"], .team-banner[data-status="offline"] { background: color-mix(in srgb, var(--danger) 12%, var(--bg)); }
+.team-banner-in { padding-block: 10px; display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 14px; }
+.team-banner-in p { margin: 0; max-width: 90ch; }
+.team-note { display: grid; gap: 6px; }
+.team-note p { margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--accent-soft); }
+.panel--share { border-top: 4px solid var(--accent); }
+.share-row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.share-row .field-wrap { flex: 1 1 220px; max-width: 340px; }
+.share-ok { margin: 0; }
+
+/* ---------- Séance d'équipe : animateur ---------- */
+
+.topbar--host { grid-template-columns: auto 1fr auto; }
+.host-tag { justify-self: start; font-size: 14px; font-weight: 600; color: var(--muted); padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; }
+@media (max-width: 560px) { .host-tag { display: none; } .topbar--host { grid-template-columns: 1fr auto; } }
+.setup-grid--even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.modes--stack { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) { .setup-grid--even { grid-template-columns: minmax(0, 1fr); } }
+.mine { list-style: none; margin: 0; padding: 0; display: grid; }
+.mine li { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.mine li:last-child { border-bottom: 0; }
+.mine a { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.mine-date { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.count-pill { justify-self: start; margin: 4px 0 0; padding: 4px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; font-size: 14px; }
+.count-pill.has-boards { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.closed-note { margin: 0; color: var(--danger); font-weight: 600; }
+.invite { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; }
+.invite-text { display: grid; gap: 10px; }
+.invite-url { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.qr { width: 168px; background: #fff; border-radius: 10px; padding: 4px; }
+.qr svg { display: block; width: 100%; height: auto; }
+@media (max-width: 640px) { .invite { grid-template-columns: minmax(0, 1fr); } .qr { justify-self: center; } }
+.waiting { padding: 28px; text-align: center; border: 2px dashed var(--line); border-radius: 14px; }
+
+/* Tableau d'équipe : une colonne par carte, cinq cases (une par position), un point par personne. */
+.teamboard { --head: 150px; --cell: 46px; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px 12px; }
+.tlanes { list-style: none; margin: 0; padding: 0; position: relative; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(6px, 1vw, 12px); }
+.tlane, .tlegend { display: grid; grid-template-rows: var(--head) auto; gap: 10px; min-width: 0; }
+.tlane-head { display: grid; align-content: start; gap: 6px; }
+.tlane-head .mcard { aspect-ratio: auto; height: 118px; }
+.tlane-avg { margin: 0; font-size: 12px; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+.dist { position: relative; display: grid; grid-template-rows: repeat(5, var(--cell)); border-radius: 10px; background: var(--lane); }
+.tlegend .dist { background: none; }
+.cell { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 3px; padding: 4px; }
+.cell.is-zero { box-shadow: inset 0 2px 0 -0px transparent; }
+.tlanes .cell.is-zero { background: linear-gradient(var(--rule), var(--rule)) center / 100% 2px no-repeat; }
+.tlegend .cell { justify-content: flex-end; text-align: right; font-size: 12px; font-weight: 600; color: var(--muted); line-height: 1.15; }
+.tlegend .cell.is-zero { color: var(--rule); }
+.cell i { width: 11px; height: 11px; border-radius: 50%; background: hsl(var(--h) var(--c-band)); box-shadow: 0 0 0 2px var(--lane); position: relative; z-index: 1; }
+.cell b { font-size: 11px; font-weight: 600; z-index: 1; }
+.avg-mark { position: absolute; left: 10%; right: 10%; height: 3px; border-radius: 2px; background: var(--fg); opacity: .55; top: calc((4 - var(--avg)) * var(--cell) + var(--cell) / 2 - 1.5px); pointer-events: none; }
+.teamboard .axis--under { grid-column: 2; }
+.team-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+@media (max-width: 960px) { .team-grid { grid-template-columns: minmax(0, 1fr); } }
+.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.people > li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.people details { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.people summary { cursor: pointer; font-weight: 600; }
+.people details[open] summary { margin-bottom: 12px; }
+.people .icon-btn { width: 44px; height: 44px; }
+
+@media (max-width: 760px) {
+  .teamboard { --head: 52px; --cell: 40px; grid-template-columns: minmax(0, 1fr); }
+  .tlanes { display: flex; flex-direction: column-reverse; gap: 8px; }
+  .tlane, .tlegend { grid-template-rows: none; grid-template-columns: 42% minmax(0, 1fr); align-items: center; }
+  .tlane-head .mcard--board { padding-left: 12px; gap: 8px; }
+  .tlane-head .mcard--board .mcard-icon { width: 24px; }
+  .tlane-head .mcard--board .mcard-name { font-size: 14px; }
+  .people .lane-card { width: min(64%, 190px); }
+  .people details { padding: 10px; }
+  .tlane-head { grid-template-columns: minmax(0, 1fr); }
+  .tlane-head .mcard { height: 52px; }
+  .tlane-avg { display: none; }
+  .dist { grid-template-rows: none; grid-template-columns: repeat(5, minmax(0, 1fr)); direction: rtl; height: var(--cell); }
+  .cell { direction: ltr; }
+  .tlegend .cell { justify-content: center; text-align: center; font-size: 10.5px; }
+  .tlanes .cell.is-zero { background: linear-gradient(var(--rule), var(--rule)) center / 2px 100% no-repeat; }
+  .avg-mark { left: auto; right: calc((4 - var(--avg)) * 20% + 10% - 1.5px); top: 6px; bottom: 6px; width: 3px; height: auto; }
+  .teamboard .axis--under { display: none; }
+}
+
 /* ---------- Pied de page, toast ---------- */
 
 .footer { padding-block: 20px 36px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
@@ -392,7 +477,7 @@ textarea.field { resize: vertical; line-height: 1.45; }
 
 @media print {
   :root { --bg: #fff; --surface: #fff; --felt: #fff; --fg: #000; --muted: #333; }
-  .topbar, .footer, .stepnav, .intro, .debrief-grid, .panel, .toast, .skip { display: none !important; }
+  .topbar, .footer, .stepnav, .intro, .debrief-grid, .panel, .toast, .skip, .team-banner { display: none !important; }
   main.wrap { padding: 0; gap: 16px; }
   .debrief-board .table { padding: 12px; }
   .lanes { --track: 260px !important; }

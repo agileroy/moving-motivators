@@ -1,37 +1,25 @@
 // Interface : rendu des quatre étapes, glisser-déposer (souris, tactile, clavier), langue, thème, export.
 
-import { MOTIVATORS, UI, LANGS } from './i18n.js';
-import { icon } from './icons.js';
+import { MOTIVATORS, UI } from './i18n.js?v=__VERSION__';
 import {
   newSession, moveTo, moveBy, setLevel, clampLevel, analyze, newAction, sanitize, buildReport,
   MIN_LEVEL, MAX_LEVEL,
-} from './core.js';
+} from './core.js?v=__VERSION__';
+import {
+  $, $$, esc, stackMQ, reduceMotion, isStacked, posOf, initialLang, rememberLang, today, announce, toast,
+  copyText, card as cardFor, lanesBoard as lanesBoardFor, levelLabelsFor, setupTheme,
+} from './shared.js?v=__VERSION__';
+import { initTeam, teamSetupNote, sharePanel, bindSharePanel, boardChanged, sessionKey } from './team-participant.js?v=__VERSION__';
 
-const STORE_KEY = 'moving-motivators.session';
-const LANG_KEY = 'moving-motivators.lang';
-const THEME_KEY = 'theme'; // partagé avec la boîte à outils (même origine)
-
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const main = $('#main');
-const live = $('#live');
-const stackMQ = window.matchMedia('(max-width: 760px)');
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 let lang = initialLang();
+const team = initTeam({ getLang: () => lang, getState: () => state, rerender: () => render(), save: () => save() });
+const STORE_KEY = sessionKey(team.sid);
 let state = loadSession();
+if (team.sid) team.applyMeta(state);
 
 /* ---------- Stockage ---------- */
-
-function initialLang() {
-  const param = new URLSearchParams(location.search).get('lang');
-  if (LANGS.includes(param)) return param;
-  try {
-    const saved = localStorage.getItem(LANG_KEY);
-    if (LANGS.includes(saved)) return saved;
-  } catch { /* stockage indisponible */ }
-  return 'fr';
-}
 
 function loadSession() {
   try {
@@ -43,41 +31,16 @@ function loadSession() {
 
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* non mémorisé */ }
+  boardChanged();
 }
 
 /* ---------- Aides ---------- */
 
 const t = () => UI[lang];
 const m = (id) => MOTIVATORS[id][lang];
-const stacked = () => stackMQ.matches;
-const levelLabels = () => (state.mode === 'change' ? t().levelsChange : t().levelsToday);
-const posOf = (level) => (level - MIN_LEVEL) / (MAX_LEVEL - MIN_LEVEL);
-
-function esc(value) {
-  return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-function announce(message) {
-  live.textContent = '';
-  requestAnimationFrame(() => { live.textContent = message; });
-}
-
-function toast(message) {
-  const el = $('#toast');
-  el.textContent = message;
-  el.hidden = false;
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => { el.hidden = true; }, 2600);
-}
-
-function card(id, cls = '') {
-  return `<div class="mcard ${cls}" style="--h:${MOTIVATORS[id].hue}" data-id="${id}">${icon(id)}<span class="mcard-name">${esc(m(id).name)}</span></div>`;
-}
-
-function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+const stacked = isStacked;
+const levelLabels = () => levelLabelsFor(lang, state.mode);
+const card = (id, cls = '') => cardFor(id, lang, cls);
 
 /* ---------- Cadre : en-tête, étapes, langue, thème ---------- */
 
@@ -93,6 +56,8 @@ function renderChrome() {
   $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   $('.lang').setAttribute('aria-label', tx.langLabel);
   $('#footer-text').textContent = tx.footer;
+  $('#host-link').textContent = tx.hostLink;
+  team.renderBanner();
   updateThemeButton();
 }
 
@@ -130,7 +95,7 @@ function renderStep1() {
         <span class="field-label">${esc(tx.nameLabel)}</span>
         <input class="field" name="name" maxlength="80" value="${esc(state.name)}" placeholder="${esc(tx.namePlaceholder)}" autocapitalize="words" spellcheck="false">
       </label>
-      <fieldset class="modes">
+      ${team.sid ? teamSetupNote() : `<fieldset class="modes">
         <legend class="field-label">${esc(tx.modeLabel)}</legend>
         ${['today', 'change'].map((mode) => `
           <label class="mode">
@@ -142,7 +107,7 @@ function renderStep1() {
       <label class="field-wrap change-wrap" ${state.mode === 'change' ? '' : 'hidden'}>
         <span class="field-label">${esc(tx.changeLabel)}</span>
         <input class="field" name="change" maxlength="200" value="${esc(state.change)}" placeholder="${esc(tx.changePlaceholder)}">
-      </label>
+      </label>`}
     </div>
   </form>
   <ul class="deck">
@@ -318,33 +283,7 @@ function bindStep2() {
 /* ---------- Étape 3 : évaluer (et tableau en lecture seule du débrief) ---------- */
 
 function lanesBoard({ readOnly = false } = {}) {
-  const tx = t();
-  const labels = levelLabels();
-  const lineLabel = state.mode === 'change' ? tx.lineChange : tx.lineToday;
-  return `
-  <div class="table assessboard ${readOnly ? 'is-readonly' : ''}">
-    <div class="scale" aria-hidden="true">
-      <span class="scale-top">${esc(labels['2'])}</span>
-      <span class="scale-mid">${esc(lineLabel)}</span>
-      <span class="scale-bottom">${esc(labels['-2'])}</span>
-    </div>
-    <ol class="lanes" ${readOnly ? '' : 'id="lanes"'}>
-      ${state.order.map((id) => {
-        const level = state.levels[id] ?? 0;
-        const label = tx.levelAnnounce(m(id).name, labels[String(level)]);
-        return `<li class="lane" data-id="${id}">
-          <div class="track" data-id="${id}">
-            <span class="ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
-            <div class="lane-card" style="--pos:${posOf(level)}" data-level="${level}"
-              ${readOnly ? `aria-label="${esc(label)}" role="img"` : `tabindex="0" role="slider" aria-orientation="${stacked() ? 'horizontal' : 'vertical'}" aria-valuemin="${MIN_LEVEL}" aria-valuemax="${MAX_LEVEL}" aria-valuenow="${level}" aria-valuetext="${esc(labels[String(level)])}" aria-label="${esc(m(id).name)}"`}>
-              ${card(id, 'mcard--board')}
-            </div>
-          </div>
-        </li>`;
-      }).join('')}
-    </ol>
-    <div class="axis axis--under" aria-hidden="true"><span>${esc(tx.less)}</span><i></i><span>${esc(tx.more)}</span></div>
-  </div>`;
+  return lanesBoardFor({ order: state.order, levels: state.levels, mode: state.mode, lang, readOnly, id: readOnly ? '' : 'lanes' });
 }
 
 function renderStep3() {
@@ -484,6 +423,7 @@ function renderStep4() {
     <h1 tabindex="-1">${esc(tx.s4Title)}</h1>
     <p class="lede">${esc(tx.s4Lede)}</p>
   </div>
+  ${sharePanel()}
 
   <section class="debrief-board" aria-labelledby="board-title">
     <h2 id="board-title">${esc(tx.boardTitle)}${state.name ? ` · ${esc(state.name)}` : ''}</h2>
@@ -553,6 +493,7 @@ function addAction(motivator) {
 }
 
 function bindStep4() {
+  bindSharePanel();
   main.addEventListener('click', onStep4Click);
   const actions = $('#actions');
   const update = (e) => {
@@ -586,6 +527,7 @@ function onStep4Click(e) {
   if (e.target.closest('#open-json')) $('#file-input').click();
   if (e.target.closest('#reset') && window.confirm(t().resetConfirm)) {
     state = newSession();
+    if (team.sid) team.applyMeta(state);
     save();
     goTo(1);
   }
@@ -594,12 +536,7 @@ function onStep4Click(e) {
 const report = () => buildReport(state, t(), (id) => m(id).name);
 
 async function copyReport() {
-  try {
-    await navigator.clipboard.writeText(report());
-    toast(t().copied);
-  } catch {
-    toast(t().copyFailed);
-  }
+  toast(await copyText(report()) ? t().copied : t().copyFailed);
 }
 
 function saveJson() {
@@ -621,6 +558,7 @@ $('#file-input').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     state = sanitize(JSON.parse(await file.text()));
+    if (team.sid) team.applyMeta(state);
     state.reached = 4;
     save();
     goTo(4);
@@ -656,10 +594,7 @@ document.addEventListener('click', (e) => {
 
 $$('.lang button').forEach((b) => b.addEventListener('click', () => {
   lang = b.dataset.lang;
-  try { localStorage.setItem(LANG_KEY, lang); } catch { /* non mémorisé */ }
-  const url = new URL(location.href);
-  url.searchParams.delete('lang');
-  history.replaceState(null, '', url);
+  rememberLang(lang);
   render();
 }));
 
@@ -668,30 +603,6 @@ stackMQ.addEventListener('change', () => render());
 
 /* ---------- Thème ---------- */
 
-const root = document.documentElement;
-const themeBtn = $('#theme-toggle');
-const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
-
-function storedTheme() {
-  try {
-    const v = localStorage.getItem(THEME_KEY);
-    return v === 'light' || v === 'dark' ? v : null;
-  } catch { return null; }
-}
-function currentTheme() {
-  return root.dataset.theme || (systemDark.matches ? 'dark' : 'light');
-}
-function updateThemeButton() {
-  const label = currentTheme() === 'dark' ? t().themeToLight : t().themeToDark;
-  themeBtn.setAttribute('aria-label', label);
-  themeBtn.title = label;
-}
-themeBtn.addEventListener('click', () => {
-  const next = currentTheme() === 'dark' ? 'light' : 'dark';
-  root.dataset.theme = next;
-  try { localStorage.setItem(THEME_KEY, next); } catch { /* non mémorisé */ }
-  updateThemeButton();
-});
-systemDark.addEventListener('change', () => { if (!storedTheme()) updateThemeButton(); });
+const updateThemeButton = setupTheme($('#theme-toggle'), t);
 
 render();

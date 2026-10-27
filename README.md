@@ -15,18 +15,49 @@ Atelier individuel inspiré de la pratique **Moving Motivators** de [Management 
 
 Sur mobile, le classement devient une pile verticale (la plus importante en haut) et l'évaluation un curseur horizontal (à droite : épanoui).
 
+## Séance d'équipe
+
+`…/moving-motivators/equipe.html` (lien « Animer une séance d'équipe » en pied de page).
+
+1. L'animateur crée une séance : nom, sujet (épanouissement ou effet d'un changement), **nominative** ou **anonyme**.
+2. Il partage le lien participant (ou le QR code). Chacun fait l'exercice sur son appareil ; le sujet est imposé par l'animateur.
+3. À l'étape 4, chaque participant choisit de **partager son tableau** (prénom, classement et positions ; jamais ses actions ni ses notes). Il peut le **retirer** à tout moment ; tant qu'il est partagé, il se met à jour quand il déplace une carte.
+4. L'animateur voit en direct le **tableau d'équipe** (une colonne par carte, rangées par importance moyenne, un point par personne et la position moyenne), ce qui compte le plus, les tensions (cartes importantes et en manque, avec le nombre de personnes concernées), les points forts et, en séance nominative, chaque tableau individuel. Il peut fermer la séance (plus de nouveaux partages), copier une synthèse, retirer un tableau ou supprimer la séance.
+
+Le lien d'animation porte une clé (`equipe.html?seance=…#cle=…`), gardée dans le navigateur de l'animateur : elle permet de rouvrir la séance depuis un autre appareil. Ne pas la partager.
+
+Comme pour le poker planning, le VPN de l'entreprise (proxy Zscaler) bloque Firebase : ouvrir la séance hors VPN, ou depuis un téléphone.
+
 ## Confidentialité
 
-Aucune donnée ne quitte le navigateur : la séance est gardée dans le stockage local et n'est exportée que si on le demande.
+- **Exercice seul** : aucune donnée ne quitte le navigateur (Firebase n'est même pas chargé).
+- **Séance d'équipe** : seuls les tableaux partagés volontairement vont dans Firebase. Les règles de sécurité garantissent que chaque participant ne lit et n'écrit que son propre tableau, et que seuls les navigateurs qui présentent la clé d'animation lisent tous les tableaux. En séance anonyme, la base refuse tout prénom. Les tableaux restent jusqu'à la suppression de la séance : la supprimer après le débrief.
 
 ## Architecture
 
-Site statique (HTML, CSS, JavaScript en modules, sans build), publié sur GitHub Pages.
+Site statique (HTML, CSS, JavaScript en modules, sans build), publié sur GitHub Pages. Les séances d'équipe utilisent Firebase Realtime Database (connexion anonyme), branche `movingMotivators` de la base du projet `poker-planning-vleroy`, partagée avec le poker planning, la matrice de compétences et la roue de la chance.
 
 - `site/js/core.js` : logique pure (classement, positions, analyse, compte rendu, validation des fichiers), testée avec Node.js ;
 - `site/js/i18n.js` : textes FR / EN et contenu des cartes ;
 - `site/js/icons.js` : pictogrammes des cartes ;
-- `site/js/app.js` : interface, glisser-déposer (pointeur : souris et tactile), clavier, thème, export.
+- `site/js/app.js` : interface, glisser-déposer (pointeur : souris et tactile), clavier, thème, export ;
+- `site/js/shared.js` : briques communes aux deux pages (cartes, tableau, langue, thème, QR code) ;
+- `site/js/team-core.js` : séances d'équipe, logique pure (données échangées, vue d'équipe), testée avec Node.js ;
+- `site/js/team-store.js` : seul module qui parle à Firebase ;
+- `site/js/team-participant.js` : côté participant (bandeau, partage, retrait) ;
+- `site/js/facilitator.js` : page d'animation (`equipe.html`) ;
+- `database.rules.json` : règles de sécurité de **toute** la base. La console Firebase n'accepte qu'un fichier de règles par base : garder ce fichier identique à celui de `poker-planning`, `matrice-competences` et `wheel-of-chance`, et le publier dans la console après chaque modification.
+
+### Données (branche `movingMotivators`)
+
+```
+movingMotivators/
+  keys/<séance>                      clé d'animation (jamais lisible)
+  sessions/<séance>/
+    meta                             title, mode, change, named, closed, createdAt (lisible par tout navigateur connecté)
+    owners/<uid>                     clé présentée par chaque animateur
+    participants/<uid>               name, order, levels, updatedAt (lisible par son auteur et les animateurs)
+```
 
 Le thème clair / sombre est mémorisé avec la même clé que la boîte à outils, donc partagé avec elle.
 
