@@ -119,6 +119,19 @@ function text(value, max = MAX_TEXT) {
   return typeof value === 'string' ? value.slice(0, max) : '';
 }
 
+/** Actions lues depuis un fichier ou le stockage local, nettoyées. */
+export function sanitizeActions(list) {
+  return Array.isArray(list)
+    ? list.slice(0, 50).filter((a) => a && typeof a === 'object').map((a) => ({
+      id: text(a.id, 40) || newAction().id,
+      what: text(a.what, 500),
+      motivator: IDS.includes(a.motivator) ? a.motivator : '',
+      who: text(a.who, 120),
+      when: /^\d{4}-\d{2}-\d{2}$/.test(a.when) ? a.when : '',
+    }))
+    : [];
+}
+
 /** Valide et normalise une séance lue depuis un fichier ou le stockage local. Lève une erreur si invalide. */
 export function sanitize(raw) {
   if (!raw || typeof raw !== 'object' || raw.format !== FORMAT) throw new Error('format');
@@ -127,15 +140,7 @@ export function sanitize(raw) {
   if (order.length !== IDS.length || new Set(order).size !== IDS.length) throw new Error('order');
   const levels = {};
   for (const id of IDS) levels[id] = clampLevel(raw.levels?.[id] ?? 0);
-  const actions = Array.isArray(raw.actions)
-    ? raw.actions.slice(0, 50).filter((a) => a && typeof a === 'object').map((a) => ({
-      id: text(a.id, 40) || newAction().id,
-      what: text(a.what, 500),
-      motivator: IDS.includes(a.motivator) ? a.motivator : '',
-      who: text(a.who, 120),
-      when: /^\d{4}-\d{2}-\d{2}$/.test(a.when) ? a.when : '',
-    }))
-    : [];
+  const actions = sanitizeActions(raw.actions);
   // Classement en cours ; une séance plus ancienne (sans pioche) est considérée comme classée.
   let placed = Array.isArray(raw.placed) ? raw.placed.filter((id) => IDS.includes(id)) : null;
   let pile = Array.isArray(raw.pile) ? raw.pile.filter((id) => IDS.includes(id)) : null;

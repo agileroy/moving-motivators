@@ -555,6 +555,10 @@ body.has-detail main.wrap { padding-bottom: 260px; }
 .cell b { font-size: 11px; font-weight: 600; z-index: 1; }
 .avg-mark { position: absolute; left: 10%; right: 10%; height: 3px; border-radius: 2px; background: var(--fg); opacity: .55; top: calc((4 - var(--avg)) * var(--cell) + var(--cell) / 2 - 1.5px); pointer-events: none; }
 .teamboard .axis--under { grid-column: 2; }
+.stack { display: grid; gap: clamp(24px, 3vw, 36px); }
+.stack[hidden] { display: none; }
+.archive-note { margin: 0; padding: 10px 14px; border-radius: 10px; background: var(--accent-soft); font-size: 14px; max-width: 80ch; }
+#live-head { display: grid; gap: 8px; justify-items: start; }
 .team-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
 @media (max-width: 960px) { .team-grid { grid-template-columns: minmax(0, 1fr); } }
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -608,7 +612,9 @@ body.has-detail main.wrap { padding-bottom: 260px; }
     --c-bg: 70% 95%; --c-edge: 45% 80%; --c-ink: 60% 30%; --c-band: 62% 46%;
     color-scheme: light;
   }
-  .topbar, .footer, .stepnav, .intro, .debrief-grid, .panel, .toast, .skip, .team-banner { display: none !important; }
+  .topbar, .footer, .stepnav, .intro, .debrief-grid, .team-grid, .panel, .toast, .skip, .team-banner { display: none !important; }
+  .stack { display: block; }
+  .stack > * + * { margin-top: 14px; }
   main.wrap { display: block; padding: 0; }
   main.wrap > * + * { margin-top: 14px; }
   .print-only { display: block !important; }
@@ -627,6 +633,6 @@ body.has-detail main.wrap { padding-bottom: 260px; }
   .print-actions th { background: #eee; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .print-actions tr { break-inside: avoid; }
   .print-notes { white-space: pre-wrap; margin: 0; }
-  .debrief-board > h2, .debrief-board > .hint { display: none; }
-  .mcard, .track { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .debrief-board > h2, .debrief-board > .hint, .debrief-board > .panel-hint { display: none; }
+  .mcard, .track, .dist, .cell i, .avg-mark, .tlanes .cell.is-zero, .lanes::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }

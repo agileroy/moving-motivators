@@ -120,3 +120,46 @@ export function teamInsights(rows, size) {
 export function formatAvg(value, lang) {
   return (Math.round(value * 10) / 10).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
+
+/* ---------- Fichier d'une séance d'équipe (.json) ---------- */
+
+export const TEAM_FORMAT = 'moving-motivators-team';
+
+/**
+ * Contenu du fichier enregistré : fiche de la séance, tableaux partagés (sans prénom en séance anonyme),
+ * actions et notes du débrief d'équipe.
+ */
+export function teamExport({ meta, people, actions, notes, exportedAt }) {
+  return {
+    format: TEAM_FORMAT,
+    version: 1,
+    title: meta.title,
+    mode: meta.mode,
+    change: meta.change,
+    named: meta.named,
+    createdAt: meta.createdAt ?? null,
+    exportedAt,
+    participants: people.map((p) => ({ name: meta.named ? p.name : '', order: [...p.order], levels: { ...p.levels } })),
+    actions,
+    notes,
+  };
+}
+
+/** Lit un fichier de séance d'équipe ; lève une erreur s'il n'en est pas un. */
+export function readTeamExport(raw, sanitizeActions) {
+  if (!raw || typeof raw !== 'object' || raw.format !== TEAM_FORMAT || !Array.isArray(raw.participants)) throw new Error('format');
+  const meta = readMeta({ ...raw, closed: true });
+  if (!meta || !meta.title) throw new Error('meta');
+  const people = raw.participants.slice(0, 200).map((p, i) => readParticipant(`p${i + 1}`, {
+    name: meta.named && typeof p?.name === 'string' ? p.name.slice(0, 50) : '',
+    order: Array.isArray(p?.order) ? p.order.join(',') : p?.order,
+    levels: p?.levels,
+  })).filter(Boolean);
+  return {
+    meta,
+    people,
+    actions: sanitizeActions(raw.actions),
+    notes: typeof raw.notes === 'string' ? raw.notes.slice(0, 2000) : '',
+    exportedAt: typeof raw.exportedAt === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw.exportedAt) ? raw.exportedAt.slice(0, 10) : null,
+  };
+}

@@ -186,3 +186,96 @@ export function hideCardDetail() {
 export function refreshCardDetail(lang) {
   if (detailId && !$('#card-detail')?.hidden) showCardDetail(detailId, lang, { toggle: false });
 }
+
+/* ---------- Actions (débrief individuel et séance d'équipe) ---------- */
+
+export function actionRowHtml(a, lang) {
+  const tx = UI[lang];
+  const ids = Object.keys(MOTIVATORS);
+  return `<li class="action" data-action="${esc(a.id)}">
+    <label class="field-wrap action-what"><span class="field-label">${esc(tx.actionWhat)}</span>
+      <textarea class="field" rows="2" data-field="what" maxlength="500" placeholder="${esc(tx.actionWhatPlaceholder)}">${esc(a.what)}</textarea></label>
+    <label class="field-wrap action-which"><span class="field-label">${esc(tx.actionWhich)}</span>
+      <select class="field" data-field="motivator">
+        <option value="">${esc(tx.actionNone)}</option>
+        ${ids.map((id) => `<option value="${id}" ${a.motivator === id ? 'selected' : ''}>${esc(MOTIVATORS[id][lang].name)}</option>`).join('')}
+      </select></label>
+    <label class="field-wrap action-who"><span class="field-label">${esc(tx.actionWho)}</span>
+      <input class="field" data-field="who" maxlength="120" value="${esc(a.who)}" placeholder="${esc(tx.actionWhoPlaceholder)}"></label>
+    <label class="field-wrap action-when"><span class="field-label">${esc(tx.actionWhen)}</span>
+      <input class="field" type="date" data-field="when" value="${esc(a.when)}" min="${today()}"></label>
+    <button type="button" class="icon-btn" data-remove aria-label="${esc(tx.removeAction)}" title="${esc(tx.removeAction)}">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+  </li>`;
+}
+
+/**
+ * Saisie dans une ligne d'action : met à jour l'action correspondante.
+ * Renvoie vrai si une valeur a changé. Une échéance dans le passé est refusée.
+ */
+export function applyActionInput(e, actions, lang) {
+  const row = e.target.closest('.action');
+  const field = e.target.dataset.field;
+  if (!row || !field) return false;
+  const a = actions.find((x) => x.id === row.dataset.action);
+  if (!a) return false;
+  if (field === 'when' && e.target.value && e.target.value < today()) {
+    if (e.type === 'change') {
+      e.target.value = a.when && a.when >= today() ? a.when : '';
+      toast(UI[lang].actionPastDate);
+    }
+    return false;
+  }
+  if (a[field] === e.target.value) return false;
+  a[field] = e.target.value;
+  return true;
+}
+
+export function formatDate(iso, lang) {
+  if (!iso) return '';
+  const [y, mo, d] = iso.split('-').map(Number);
+  return new Date(y, mo - 1, d).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/** Tableau imprimable des actions (ou « aucune »). */
+export function printActionsHtml(actions, lang) {
+  const tx = UI[lang];
+  const list = actions.filter((a) => a.what.trim() || a.who.trim() || a.when || a.motivator);
+  if (!list.length) return `<p>${esc(tx.reportNone)}</p>`;
+  return `<table class="print-actions">
+    <thead><tr><th>${esc(tx.actionWhat)}</th><th>${esc(tx.actionWhich)}</th><th>${esc(tx.actionWho)}</th><th>${esc(tx.actionWhen)}</th></tr></thead>
+    <tbody>${list.map((a) => `<tr><td>${esc(a.what.trim())}</td><td>${a.motivator ? esc(MOTIVATORS[a.motivator][lang].name) : ''}</td><td>${esc(a.who.trim())}</td><td>${esc(formatDate(a.when, lang))}</td></tr>`).join('')}</tbody>
+  </table>`;
+}
+
+/** Lignes texte des actions et des notes, pour les comptes rendus copiés. */
+export function actionsNotesLines(actions, notes, lang) {
+  const tx = UI[lang];
+  const colon = lang === 'en' ? ':' : ' :';
+  const list = actions.filter((a) => a.what.trim());
+  const lines = ['', `${tx.reportActions}${colon}${list.length ? '' : ` ${tx.reportNone}`}`];
+  for (const a of list) {
+    const meta = [a.motivator ? MOTIVATORS[a.motivator][lang].name : '', a.who.trim(), a.when].filter(Boolean).join(', ');
+    lines.push(`- ${a.what.trim()}${meta ? ` (${meta})` : ''}`);
+  }
+  if (notes.trim()) lines.push('', `${tx.reportNotes}${colon}`, notes.trim());
+  return lines;
+}
+
+/** Nom de fichier sans accents ni espaces. */
+export function slugify(value, fallback) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || fallback;
+}
+
+/** Télécharge un objet en fichier .json. */
+export function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

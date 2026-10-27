@@ -77,3 +77,23 @@ test('formatAvg suit la langue', () => {
   assert.equal(formatAvg(7.36, 'fr'), '7,4');
   assert.equal(formatAvg(7.36, 'en'), '7.4');
 });
+
+test('fichier de séance d\'équipe : export puis relecture', async () => {
+  const { teamExport, readTeamExport } = await import('../site/js/team-core.js');
+  const { sanitizeActions, newAction } = await import('../site/js/core.js');
+  const meta = { title: 'Équipe A', mode: 'change', change: 'Réorg', named: false, closed: false, createdAt: 5 };
+  const people = [readParticipant('u1', { name: 'Léa', order: IDS.join(','), levels: { goal: -2 } })];
+  const file = teamExport({ meta, people, actions: [{ ...newAction('goal'), what: 'Clarifier le but', when: '2026-11-30' }], notes: 'Bonne séance', exportedAt: '2026-10-27' });
+  assert.equal(file.participants[0].name, '', 'séance anonyme : pas de prénom dans le fichier');
+  const back = readTeamExport(JSON.parse(JSON.stringify(file)), sanitizeActions);
+  assert.equal(back.meta.title, 'Équipe A');
+  assert.equal(back.meta.change, 'Réorg');
+  assert.equal(back.people.length, 1);
+  assert.equal(back.people[0].levels.goal, -2);
+  assert.equal(back.actions[0].what, 'Clarifier le but');
+  assert.equal(back.notes, 'Bonne séance');
+  assert.equal(back.exportedAt, '2026-10-27');
+  assert.throws(() => readTeamExport({ format: 'moving-motivators' }, sanitizeActions));
+  const named = readTeamExport({ ...file, named: true, participants: [{ name: 'Marc', order: IDS, levels: {} }, { name: 'X', order: ['goal'] }] }, sanitizeActions);
+  assert.deepEqual(named.people.map((p) => p.name), ['Marc'], 'tableau incomplet ignoré');
+});
