@@ -3,7 +3,8 @@
 
 import { MOTIVATORS, UI } from './i18n.js?v=__VERSION__';
 import {
-  $, $$, esc, stackMQ, posOf, initialLang, rememberLang, toast, copyText, card, lanesBoard, levelLabelsFor, setupTheme, qrSvg,
+  $, $$, esc, stackMQ, initialLang, rememberLang, toast, copyText, card, lanesBoard, levelLabelsFor, setupTheme, qrSvg,
+  showCardDetail, refreshCardDetail,
 } from './shared.js?v=__VERSION__';
 import { isSessionId, isKey, readMeta, readParticipants, aggregate, teamInsights, formatAvg } from './team-core.js?v=__VERSION__';
 import { createTeamStore } from './team-store.js?v=__VERSION__';
@@ -249,6 +250,8 @@ function bindMain() {
     if (d.open) openBoards.add(d.dataset.uid); else openBoards.delete(d.dataset.uid);
   }, true);
   main.addEventListener('click', async (e) => {
+    const cardEl = e.target.closest('.mcard[data-id]');
+    if (cardEl) { showCardDetail(cardEl.dataset.id, lang); return; }
     const forgetBtn = e.target.closest('[data-forget]');
     if (forgetBtn) { forget(forgetBtn.dataset.forget); render(); return; }
     if (view !== 'session') return;
@@ -323,6 +326,7 @@ function render() {
   $('#footer-text').textContent = tx.footer;
   $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   updateTheme?.();
+  refreshCardDetail(lang);
   if (view === 'home') {
     main.innerHTML = renderHome();
     bindHomeForm();

@@ -10,14 +10,27 @@ export const VERSION = 1;
 
 const MAX_TEXT = 2000;
 
-export function newSession() {
+/** Mélange de Fisher-Yates (nouvelle copie). `random` est injectable pour les tests. */
+export function shuffle(list, random = Math.random) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+export function newSession(random = Math.random) {
   return {
     format: FORMAT,
     version: VERSION,
     name: '',
     mode: 'today',
     change: '',
-    order: [...IDS], // index 0 = la moins importante, index 9 = la plus importante
+    // Classement en cours : cartes posées (de la moins à la plus importante) et pioche mélangée.
+    placed: [],
+    pile: shuffle(IDS, random),
+    order: [...IDS], // classement final, index 0 = la moins importante ; à jour quand la pioche est vide
     levels: Object.fromEntries(IDS.map((id) => [id, 0])),
     actions: [],
     notes: '',
@@ -25,6 +38,28 @@ export function newSession() {
     reached: 1,
     date: null,
   };
+}
+
+/** Vrai quand toutes les cartes sont posées. */
+export const rankingDone = (session) => session.pile.length === 0;
+
+/** Pose la carte du dessus de la pioche à l'index donné du tableau. */
+export function placeTop(session, index) {
+  if (!session.pile.length) return session;
+  const [top, ...pile] = session.pile;
+  const placed = session.placed.slice();
+  placed.splice(Math.max(0, Math.min(placed.length, index)), 0, top);
+  return { ...session, placed, pile, order: pile.length ? session.order : placed };
+}
+
+/** Remplace l'ordre des cartes posées (réorganisation dans le tableau). */
+export function reorderPlaced(session, placed) {
+  return { ...session, placed, order: session.pile.length ? session.order : placed };
+}
+
+/** Remet toutes les cartes dans la pioche, mélangée. */
+export function resetRanking(session, random = Math.random) {
+  return { ...session, placed: [], pile: shuffle(IDS, random), reached: Math.min(session.reached, 2), step: Math.min(session.step, 2) };
 }
 
 /** Déplace une carte à un index donné (borné) et renvoie un nouveau classement. */
@@ -101,14 +136,26 @@ export function sanitize(raw) {
       when: /^\d{4}-\d{2}-\d{2}$/.test(a.when) ? a.when : '',
     }))
     : [];
-  const step = Math.max(1, Math.min(4, Math.round(Number(raw.step)) || 1));
-  const reached = Math.max(step, Math.min(4, Math.round(Number(raw.reached)) || 1));
+  // Classement en cours ; une séance plus ancienne (sans pioche) est considérée comme classée.
+  let placed = Array.isArray(raw.placed) ? raw.placed.filter((id) => IDS.includes(id)) : null;
+  let pile = Array.isArray(raw.pile) ? raw.pile.filter((id) => IDS.includes(id)) : null;
+  const all = placed && pile ? [...placed, ...pile] : [];
+  if (!placed || !pile || all.length !== IDS.length || new Set(all).size !== IDS.length) {
+    placed = order.slice();
+    pile = [];
+  }
+  if (!pile.length) placed = placed.length === IDS.length ? placed : order.slice();
+  const maxStep = pile.length ? 2 : 4;
+  const step = Math.max(1, Math.min(maxStep, Math.round(Number(raw.step)) || 1));
+  const reached = Math.max(step, Math.min(maxStep, Math.round(Number(raw.reached)) || 1));
   return {
     ...base,
     name: text(raw.name, 80),
     mode: MODES.includes(raw.mode) ? raw.mode : 'today',
     change: text(raw.change, 200),
-    order,
+    placed,
+    pile,
+    order: pile.length ? order : placed,
     levels,
     actions,
     notes: text(raw.notes),

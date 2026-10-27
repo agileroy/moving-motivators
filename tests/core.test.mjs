@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { IDS, newSession, moveTo, moveBy, setLevel, clampLevel, analyze, sanitize, buildReport, newAction } from '../site/js/core.js';
+import { IDS, newSession, moveTo, moveBy, setLevel, clampLevel, analyze, sanitize, buildReport, newAction, shuffle, placeTop, reorderPlaced, resetRanking, rankingDone } from '../site/js/core.js';
 import { MOTIVATORS, UI, LANGS } from '../site/js/i18n.js';
 
 test('chaque motivation a son contenu complet en FR et en EN', () => {
@@ -67,7 +67,10 @@ test('sanitize accepte une séance valide et rejette le reste', () => {
   const messy = sanitize({ ...s, levels: { goal: 9 }, mode: 'x', step: 12, actions: [{ motivator: 'nope', when: 'demain' }] });
   assert.equal(messy.levels.goal, 2);
   assert.equal(messy.mode, 'today');
-  assert.equal(messy.step, 4);
+  assert.equal(messy.step, 2, 'pioche non vide : pas au-delà du classement');
+  const ranked = sanitize({ ...s, placed: undefined, pile: undefined, step: 12 });
+  assert.equal(ranked.step, 4, 'séance ancienne sans pioche : considérée classée');
+  assert.deepEqual(ranked.placed, IDS);
   assert.equal(messy.actions[0].motivator, '');
   assert.equal(messy.actions[0].when, '');
 });
@@ -89,4 +92,41 @@ test('buildReport liste le classement du plus au moins important, dans la langue
   const en = buildReport(s, UI.en, (id) => MOTIVATORS[id].en.name);
   assert.match(en, /1\. Status: Much weaker/);
   assert.match(en, /Work on these first: Status/);
+});
+
+test('la pioche : mélangée, posée carte par carte, puis classement final', () => {
+  let s = newSession(() => 0);
+  assert.equal(s.pile.length, 10);
+  assert.deepEqual([...s.pile].sort(), [...IDS].sort());
+  assert.deepEqual(s.placed, []);
+  assert.ok(!rankingDone(s));
+  const first = s.pile[0];
+  s = placeTop(s, 0);
+  assert.deepEqual(s.placed, [first]);
+  const second = s.pile[0];
+  s = placeTop(s, 0); // posée avant la première : moins importante
+  assert.deepEqual(s.placed, [second, first]);
+  while (s.pile.length) s = placeTop(s, s.placed.length);
+  assert.ok(rankingDone(s));
+  assert.deepEqual(s.order, s.placed, 'classement final = cartes posées');
+  s = reorderPlaced(s, moveTo(s.placed, first, 9));
+  assert.equal(s.order[9], first);
+  const back = sanitize(JSON.parse(JSON.stringify({ ...s, step: 4, reached: 4 })));
+  assert.equal(back.step, 4);
+  const reset = resetRanking({ ...s, step: 4, reached: 4 });
+  assert.equal(reset.pile.length, 10);
+  assert.equal(reset.reached, 2);
+  assert.equal(reset.step, 2);
+});
+
+test('sanitize répare une pioche incohérente', () => {
+  const s = newSession();
+  const bad = sanitize({ ...s, placed: ['goal'], pile: ['goal', 'status'] });
+  assert.equal(bad.pile.length, 0);
+  assert.equal(bad.placed.length, 10);
+});
+
+test('shuffle garde toutes les cartes', () => {
+  const out = shuffle(IDS);
+  assert.deepEqual([...out].sort(), [...IDS].sort());
 });

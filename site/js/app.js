@@ -3,11 +3,12 @@
 import { MOTIVATORS, UI } from './i18n.js?v=__VERSION__';
 import {
   newSession, moveTo, moveBy, setLevel, clampLevel, analyze, newAction, sanitize, buildReport,
-  MIN_LEVEL, MAX_LEVEL,
+  rankingDone, placeTop, reorderPlaced, resetRanking, MIN_LEVEL, MAX_LEVEL,
 } from './core.js?v=__VERSION__';
 import {
   $, $$, esc, stackMQ, reduceMotion, isStacked, posOf, initialLang, rememberLang, today, announce, toast,
   copyText, card as cardFor, lanesBoard as lanesBoardFor, levelLabelsFor, setupTheme,
+  cardDetailBody, showCardDetail, hideCardDetail, refreshCardDetail,
 } from './shared.js?v=__VERSION__';
 import { initTeam, teamSetupNote, sharePanel, bindSharePanel, boardChanged, sessionKey } from './team-participant.js?v=__VERSION__';
 
@@ -51,7 +52,7 @@ function renderChrome() {
   $('#stepper').innerHTML = tx.steps.map((label, i) => {
     const n = i + 1;
     const current = n === state.step;
-    return `<li><button type="button" data-step="${n}" ${n > state.reached ? 'disabled' : ''} ${current ? 'aria-current="step"' : ''} aria-label="${esc(`${tx.stepOf(n)} : ${label}`)}"><span class="step-n">${n}</span><span class="step-label">${esc(label)}</span></button></li>`;
+    return `<li><button type="button" data-step="${n}" ${n > state.reached || (n > 2 && !rankingDone(state)) ? 'disabled' : ''} ${current ? 'aria-current="step"' : ''} aria-label="${esc(`${tx.stepOf(n)} : ${label}`)}"><span class="step-n">${n}</span><span class="step-label">${esc(label)}</span></button></li>`;
   }).join('');
   $$('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
   $('.lang').setAttribute('aria-label', tx.langLabel);
@@ -62,7 +63,8 @@ function renderChrome() {
 }
 
 function goTo(step) {
-  state.step = Math.max(1, Math.min(4, step));
+  state.step = Math.max(1, Math.min(rankingDone(state) ? 4 : 2, step));
+  hideCardDetail();
   state.reached = Math.max(state.reached, state.step);
   if (state.step === 4 && !state.date) state.date = today();
   save();
@@ -71,10 +73,10 @@ function goTo(step) {
   $('#main h1')?.focus({ preventScroll: true });
 }
 
-function navButtons(nextLabel) {
+function navButtons(nextLabel, blockedReason = null) {
   return `<div class="stepnav">
     ${state.step > 1 ? `<button type="button" class="btn btn-quiet" data-go="${state.step - 1}">${esc(t().back)}</button>` : '<span></span>'}
-    ${nextLabel ? `<button type="button" class="btn btn-primary" data-go="${state.step + 1}">${esc(nextLabel)}</button>` : ''}
+    ${nextLabel ? `<span class="next-wrap">${blockedReason ? `<span class="hint">${esc(blockedReason)}</span>` : ''}<button type="button" class="btn btn-primary" data-go="${state.step + 1}" ${blockedReason ? 'disabled' : ''}>${esc(nextLabel)}</button></span>` : ''}
   </div>`;
 }
 
@@ -140,65 +142,131 @@ function bindStep1() {
   });
 }
 
-/* ---------- Étape 2 : classer ---------- */
+/* ---------- Étape 2 : classer (pioche, puis tableau) ---------- */
+
+const PLUS = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
 
 function rankItem(id) {
   const tx = t();
-  const pos = state.order.indexOf(id) + 1;
-  return `<li class="rank-item" data-id="${id}" tabindex="0" aria-label="${esc(tx.rankAnnounce(m(id).name, pos))}">
+  const total = state.placed.length;
+  const pos = state.placed.indexOf(id) + 1;
+  return `<li class="rank-item" data-id="${id}" tabindex="0" aria-label="${esc(tx.rankAnnounce(m(id).name, pos, total))}">
     ${card(id, 'mcard--board')}
     <span class="rank-moves">
       <button type="button" class="nudge" data-nudge="-1" aria-label="${esc(tx.moveLess(m(id).name))}" ${pos === 1 ? 'disabled' : ''}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></button>
-      <button type="button" class="nudge" data-nudge="1" aria-label="${esc(tx.moveMore(m(id).name))}" ${pos === 10 ? 'disabled' : ''}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>
+      <button type="button" class="nudge" data-nudge="1" aria-label="${esc(tx.moveMore(m(id).name))}" ${pos === total ? 'disabled' : ''}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>
     </span>
   </li>`;
 }
 
+function slot(index) {
+  const tx = t();
+  const top = state.pile[0];
+  const total = state.placed.length + 1;
+  const empty = state.placed.length === 0;
+  return `<li class="slot-item"><button type="button" class="slot" data-slot="${index}" aria-label="${esc(tx.placeHere(m(top).name, index + 1, total))}">
+    ${PLUS}${empty ? `<span>${esc(tx.placeFirst)}</span>` : ''}</button></li>`;
+}
+
+function rowHtml() {
+  if (rankingDone(state)) return state.placed.map(rankItem).join('');
+  const parts = [slot(0)];
+  state.placed.forEach((id, i) => { parts.push(rankItem(id), slot(i + 1)); });
+  return parts.join('');
+}
+
+function pileHtml() {
+  const tx = t();
+  if (rankingDone(state)) {
+    return `<div class="pile pile--done">
+      <p>${esc(tx.pileDone)}</p>
+      <button type="button" class="btn btn-quiet btn-small" id="pile-reset">${esc(tx.pileReset)}</button>
+    </div>`;
+  }
+  const top = state.pile[0];
+  const k = state.placed.length + 1;
+  return `<div class="pile">
+    <div class="pile-stack" style="--left:${state.pile.length - 1}" aria-hidden="true">
+      ${state.pile.length > 2 ? '<span class="pile-back pile-back--2"></span>' : ''}
+      ${state.pile.length > 1 ? '<span class="pile-back pile-back--1"></span>' : ''}
+      <div class="pile-top" id="pile-top" data-id="${top}">${card(top, 'mcard--full')}</div>
+    </div>
+    <div class="pile-text">
+      <p class="pile-count">${esc(tx.pileCount(k))}</p>
+      <h2>${esc(m(top).name)}</h2>
+      ${cardDetailBody(top, lang)}
+      <p class="hint pile-hint">${esc(tx.pileHint)}</p>
+    </div>
+  </div>`;
+}
+
 function renderStep2() {
   const tx = t();
+  const done = rankingDone(state);
   return `
   <div class="intro">
     <h1 tabindex="-1">${esc(tx.s2Title)}</h1>
     <p class="lede">${esc(stacked() ? tx.s2LedeStack : tx.s2Lede)}</p>
-    <p class="hint">${esc(tx.s2Keys)}</p>
+    <p class="hint">${esc(tx.s2Keys)} ${esc(tx.detailHint)}</p>
   </div>
+  <div id="pile-area">${pileHtml()}</div>
   <div class="table rankboard">
     <div class="axis" aria-hidden="true"><span>${esc(tx.less)}</span><i></i><span>${esc(tx.more)}</span></div>
-    <ol class="rankrow" id="rankrow">${state.order.map(rankItem).join('')}</ol>
+    <ol class="rankrow ${done ? 'is-done' : 'is-placing'} ${state.placed.length ? '' : 'is-empty'}" id="rankrow">${rowHtml()}</ol>
   </div>
-  ${navButtons(tx.s2Next)}`;
+  ${navButtons(tx.s2Next, done ? null : tx.s2NotDone)}`;
+}
+
+/** Redessine la pioche, le tableau et la navigation après un changement. */
+function refreshStep2(focus) {
+  const done = rankingDone(state);
+  $('#pile-area').innerHTML = pileHtml();
+  const row = $('#rankrow');
+  row.className = `rankrow ${done ? 'is-done' : 'is-placing'} ${state.placed.length ? '' : 'is-empty'}`;
+  row.innerHTML = rowHtml();
+  $('.stepnav').outerHTML = navButtons(t().s2Next, done ? null : t().s2NotDone);
+  renderChrome();
+  if (focus?.id) {
+    $(`.rank-item[data-id="${focus.id}"]`)?.focus({ preventScroll: true });
+  } else if (focus?.slot !== undefined) {
+    ($(`.slot[data-slot="${focus.slot}"]`) ?? $('.slot'))?.focus({ preventScroll: true });
+  }
+}
+
+function placeAt(index) {
+  const id = state.pile[0];
+  state = placeTop(state, index);
+  save();
+  const pos = state.placed.indexOf(id) + 1;
+  refreshStep2(rankingDone(state) ? { id } : { slot: pos });
+  announce(t().placedAnnounce(m(id).name, pos, state.placed.length));
 }
 
 function commitOrder(order, focusId) {
-  state.order = order;
+  state = reorderPlaced(state, order);
   save();
-  $('#rankrow').innerHTML = state.order.map(rankItem).join('');
-  if (focusId) {
-    $(`.rank-item[data-id="${focusId}"]`)?.focus();
-    announce(t().rankAnnounce(m(focusId).name, state.order.indexOf(focusId) + 1));
-  }
+  refreshStep2(focusId ? { id: focusId } : null);
+  if (focusId) announce(t().rankAnnounce(m(focusId).name, state.placed.indexOf(focusId) + 1, state.placed.length));
 }
 
 function bindStep2() {
   const row = $('#rankrow');
 
-  row.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-nudge]');
-    if (!btn) return;
-    const id = btn.closest('.rank-item').dataset.id;
-    commitOrder(moveBy(state.order, id, Number(btn.dataset.nudge)), id);
-  });
+  main.addEventListener('click', onStep2Click, { signal: stepSignal() });
 
   row.addEventListener('keydown', (e) => {
     const item = e.target.closest('.rank-item');
     if (!item || e.target !== item) return;
-    const keys = stacked()
-      ? { ArrowUp: 1, ArrowDown: -1, ArrowRight: 1, ArrowLeft: -1 }
-      : { ArrowRight: 1, ArrowLeft: -1, ArrowUp: 1, ArrowDown: -1 };
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      showCardDetail(item.dataset.id, lang);
+      return;
+    }
+    const keys = { ArrowRight: 1, ArrowLeft: -1, ArrowUp: 1, ArrowDown: -1 };
     let next = null;
-    if (e.key in keys) next = moveBy(state.order, item.dataset.id, keys[e.key]);
-    if (e.key === 'Home') next = moveTo(state.order, item.dataset.id, 0);
-    if (e.key === 'End') next = moveTo(state.order, item.dataset.id, 9);
+    if (e.key in keys) next = moveBy(state.placed, item.dataset.id, keys[e.key]);
+    if (e.key === 'Home') next = moveTo(state.placed, item.dataset.id, 0);
+    if (e.key === 'End') next = moveTo(state.placed, item.dataset.id, state.placed.length - 1);
     if (next) {
       e.preventDefault();
       commitOrder(next, item.dataset.id);
@@ -207,27 +275,56 @@ function bindStep2() {
 
   let drag = null;
 
-  row.addEventListener('pointerdown', (e) => {
+  // Glisser : une carte du tableau (réordonner) ou la carte de la pioche (poser).
+  main.addEventListener('pointerdown', onStep2Down, { signal: stepSignal() });
+
+  function onStep2Down(e) {
+    if (state.step !== 2 || e.button !== 0 || e.target.closest('button')) return;
     const item = e.target.closest('.rank-item');
-    if (!item || e.button !== 0 || e.target.closest('button')) return;
-    const rect = item.getBoundingClientRect();
-    drag = { item, startX: e.clientX, startY: e.clientY, offX: e.clientX - rect.left, offY: e.clientY - rect.top, rect, active: false, pointerId: e.pointerId };
+    const top = e.target.closest('#pile-top');
+    if (!item && !top) return;
+    const source = item ?? top;
+    const rect = source.getBoundingClientRect();
+    drag = { item, top, source, startX: e.clientX, startY: e.clientY, offX: e.clientX - rect.left, offY: e.clientY - rect.top, rect, active: false, pointerId: e.pointerId };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
-  });
+  }
 
   function begin() {
-    const { item, rect } = drag;
+    const r = $('#rankrow');
     drag.active = true;
+    hideCardDetail();
+    r.classList.add('is-dragging');
+    // Taille d'une carte du tableau, pour l'emplacement fantôme.
+    const sample = r.querySelector('.rank-item') ?? null;
+    const sr = drag.item ? drag.rect : sample?.getBoundingClientRect();
     drag.placeholder = document.createElement('li');
     drag.placeholder.className = 'rank-placeholder';
-    drag.placeholder.style.width = `${rect.width}px`;
-    drag.placeholder.style.height = `${rect.height}px`;
-    item.before(drag.placeholder);
-    item.classList.add('is-dragging');
-    Object.assign(item.style, { position: 'fixed', left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, zIndex: 50 });
+    if (sr) {
+      drag.placeholder.style.width = `${sr.width}px`;
+      drag.placeholder.style.height = `${sr.height}px`;
+    }
+    if (drag.item) {
+      drag.item.before(drag.placeholder);
+      drag.ghost = drag.item;
+    } else {
+      // La carte de la pioche : on déplace une copie, l'originale reste en place, estompée.
+      drag.ghost = drag.top.cloneNode(true);
+      drag.ghost.removeAttribute('id');
+      drag.ghost.classList.add('pile-ghost');
+      document.body.append(drag.ghost);
+      drag.top.classList.add('is-lifted');
+    }
+    drag.ghost.classList.add('is-dragging');
+    Object.assign(drag.ghost.style, { position: 'fixed', left: `${drag.rect.left}px`, top: `${drag.rect.top}px`, width: `${drag.rect.width}px`, height: `${drag.rect.height}px`, zIndex: 50, margin: 0 });
     document.body.classList.add('is-grabbing');
+  }
+
+  function overBoard(e) {
+    const b = $('.rankboard').getBoundingClientRect();
+    const pad = 40;
+    return e.clientX > b.left - pad && e.clientX < b.right + pad && e.clientY > b.top - pad && e.clientY < b.bottom + pad;
   }
 
   function onMove(e) {
@@ -237,24 +334,29 @@ function bindStep2() {
       begin();
     }
     e.preventDefault();
-    const { item, placeholder } = drag;
-    item.style.left = `${e.clientX - drag.offX}px`;
-    item.style.top = `${e.clientY - drag.offY}px`;
+    const r = $('#rankrow');
+    const { ghost, placeholder } = drag;
+    ghost.style.left = `${e.clientX - drag.offX}px`;
+    ghost.style.top = `${e.clientY - drag.offY}px`;
 
-    const siblings = [...row.children].filter((c) => c !== item && c !== placeholder);
-    const before = siblings.filter((c) => {
-      const r = c.getBoundingClientRect();
-      return stacked() ? r.top + r.height / 2 > e.clientY : r.left + r.width / 2 < e.clientX;
+    if (!drag.item && !overBoard(e)) {
+      placeholder.remove();
+      drag.index = null;
+      return;
+    }
+    const items = [...r.querySelectorAll('.rank-item')].filter((c) => c !== drag.item);
+    const before = items.filter((c) => {
+      const b = c.getBoundingClientRect();
+      return stacked() ? b.top + b.height / 2 > e.clientY : b.left + b.width / 2 < e.clientX;
     }).length;
-    const ref = siblings[before] ?? null;
-    let after = placeholder.nextElementSibling;
-    if (after === item) after = item.nextElementSibling;
-    if (after === ref) return;
-    // Animation FLIP des cartes qui se décalent.
-    const first = new Map(siblings.map((c) => [c, c.getBoundingClientRect()]));
-    row.insertBefore(placeholder, ref);
+    if (drag.index === before && placeholder.isConnected) return;
+    drag.index = before;
+    const first = new Map(items.map((c) => [c, c.getBoundingClientRect()]));
+    const ref = items[before] ?? null;
+    if (ref) r.insertBefore(placeholder, ref.previousElementSibling?.classList.contains('slot-item') ? ref.previousElementSibling : ref);
+    else r.append(placeholder);
     if (reduceMotion.matches) return;
-    for (const c of siblings) {
+    for (const c of items) {
       const a = first.get(c);
       const b = c.getBoundingClientRect();
       const dx = a.left - b.left;
@@ -269,14 +371,45 @@ function bindStep2() {
     window.removeEventListener('pointermove', onMove);
     window.removeEventListener('pointerup', onUp);
     window.removeEventListener('pointercancel', onUp);
-    const { item, placeholder, active } = drag;
+    const d = drag;
     drag = null;
     document.body.classList.remove('is-grabbing');
-    if (!active) return;
-    placeholder.replaceWith(item);
-    item.removeAttribute('style');
-    item.classList.remove('is-dragging');
-    commitOrder([...row.children].map((c) => c.dataset.id), item.dataset.id);
+    if (!d.active) {
+      // Simple clic sur une carte du tableau : détail de la carte.
+      if (d.item) showCardDetail(d.item.dataset.id, lang);
+      return;
+    }
+    $('#rankrow')?.classList.remove('is-dragging');
+    d.placeholder.remove();
+    if (d.item) {
+      d.item.removeAttribute('style');
+      d.item.classList.remove('is-dragging');
+      const order = state.placed.filter((id) => id !== d.item.dataset.id);
+      order.splice(d.index ?? state.placed.indexOf(d.item.dataset.id), 0, d.item.dataset.id);
+      commitOrder(order, d.item.dataset.id);
+    } else {
+      d.ghost.remove();
+      d.top.classList.remove('is-lifted');
+      if (d.index === null || d.index === undefined) return;
+      placeAt(d.index);
+    }
+  }
+}
+
+function onStep2Click(e) {
+  if (state.step !== 2) return;
+  const slotBtn = e.target.closest('[data-slot]');
+  if (slotBtn) { placeAt(Number(slotBtn.dataset.slot)); return; }
+  const nudge = e.target.closest('[data-nudge]');
+  if (nudge) {
+    const id = nudge.closest('.rank-item').dataset.id;
+    commitOrder(moveBy(state.placed, id, Number(nudge.dataset.nudge)), id);
+    return;
+  }
+  if (e.target.closest('#pile-reset') && window.confirm(t().pileResetConfirm)) {
+    state = resetRanking(state);
+    save();
+    refreshStep2({ slot: 0 });
   }
 }
 
@@ -296,7 +429,7 @@ function renderStep3() {
   <div class="intro">
     <h1 tabindex="-1">${esc(tx.s3Title)}</h1>
     <p class="lede">${esc(lede)}</p>
-    <p class="hint">${esc(tx.s3Keys)}</p>
+    <p class="hint">${esc(tx.s3Keys)} ${esc(tx.detailHint)}</p>
   </div>
   ${lanesBoard()}
   ${navButtons(tx.s3Next)}`;
@@ -336,6 +469,11 @@ function bindStep3() {
     if (e.key in map) next = current + map[e.key];
     if (e.key === 'Home' || e.key === 'PageDown') next = MIN_LEVEL;
     if (e.key === 'End' || e.key === 'PageUp') next = MAX_LEVEL;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      showCardDetail(id, lang);
+      return;
+    }
     if (next === null) return;
     e.preventDefault();
     applyLevel(holder, id, next, true);
@@ -353,12 +491,16 @@ function bindStep3() {
     const grabOffset = onCard
       ? (stacked() ? e.clientX - hr.left : e.clientY - hr.top)
       : (stacked() ? hr.width / 2 : hr.height / 2);
+    const start = { x: e.clientX, y: e.clientY };
+    let moved = false;
     holder.setPointerCapture(e.pointerId);
     holder.classList.add('is-dragging');
     holder.focus({ preventScroll: true });
     if (!onCard) holder.style.setProperty('--pos', posFromPointer(track, holder, e, grabOffset));
     const move = (ev) => {
       ev.preventDefault();
+      if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 5) return;
+      moved = true;
       holder.style.setProperty('--pos', posFromPointer(track, holder, ev, grabOffset));
     };
     const up = (ev) => {
@@ -366,6 +508,11 @@ function bindStep3() {
       holder.removeEventListener('pointerup', up);
       holder.removeEventListener('pointercancel', up);
       holder.classList.remove('is-dragging');
+      // Simple clic sur la carte : elle ne bouge pas, on affiche son détail.
+      if (onCard && !moved) {
+        showCardDetail(id, lang);
+        return;
+      }
       const pos = posFromPointer(track, holder, ev, grabOffset);
       applyLevel(holder, id, Math.round(pos * (MAX_LEVEL - MIN_LEVEL)) + MIN_LEVEL, true);
     };
@@ -427,7 +574,13 @@ function renderStep4() {
 
   <section class="debrief-board" aria-labelledby="board-title">
     <h2 id="board-title">${esc(tx.boardTitle)}${state.name ? ` · ${esc(state.name)}` : ''}</h2>
+    <p class="hint">${esc(tx.detailHint)}</p>
     ${lanesBoard({ readOnly: true })}
+  </section>
+
+  <section class="panel panel--discussion" aria-labelledby="gen-title">
+    <h2 id="gen-title">${esc(tx.generalTitle)}</h2>
+    <ol class="discussion">${tx.generalQuestions.map((q) => `<li>${esc(q)}</li>`).join('')}</ol>
   </section>
 
   <div class="debrief-grid">
@@ -448,10 +601,6 @@ function renderStep4() {
         <p class="panel-hint">${esc(tx.watchHint)}</p>
         <ul class="insights">${watch.map((i) => insight(i, 'questions')).join('')}</ul>
       </section>` : ''}
-      <section class="panel" aria-labelledby="gen-title">
-        <h2 id="gen-title">${esc(tx.generalTitle)}</h2>
-        <ul class="questions">${tx.generalQuestions.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>
-      </section>
     </div>
   </div>
 
@@ -494,7 +643,7 @@ function addAction(motivator) {
 
 function bindStep4() {
   bindSharePanel();
-  main.addEventListener('click', onStep4Click);
+  main.addEventListener('click', onStep4Click, { signal: stepSignal() });
   const actions = $('#actions');
   const update = (e) => {
     const row = e.target.closest('.action');
@@ -510,6 +659,8 @@ function bindStep4() {
 
 function onStep4Click(e) {
   if (state.step !== 4) return;
+  const cardEl = e.target.closest('.mcard[data-id]');
+  if (cardEl) { showCardDetail(cardEl.dataset.id, lang); return; }
   const add = e.target.closest('[data-add-action]');
   if (add) { addAction(add.dataset.addAction); return; }
   const remove = e.target.closest('[data-remove]');
@@ -577,9 +728,15 @@ const STEPS = {
   4: [renderStep4, bindStep4],
 };
 
+let stepAbort = null;
+/** Écouteurs posés sur <main> pour l'étape affichée ; retirés au rendu suivant. */
+const stepSignal = () => stepAbort.signal;
+
 function render() {
   renderChrome();
-  main.removeEventListener('click', onStep4Click);
+  stepAbort?.abort();
+  stepAbort = new AbortController();
+  refreshCardDetail(lang);
   const [draw, bind] = STEPS[state.step];
   main.dataset.step = state.step;
   main.innerHTML = draw();

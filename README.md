@@ -9,9 +9,11 @@ Atelier individuel inspiré de la pratique **Moving Motivators** de [Management 
 1. **Découvrir** : les dix cartes, avec une définition et trois exemples chacune. On choisit aussi le sujet de la séance :
    - *Mon épanouissement aujourd'hui* (par défaut) : chaque motivation est-elle nourrie dans le travail actuel ?
    - *L'effet d'un changement* : la variante d'origine de Management 3.0, où l'on regarde si un changement renforce ou affaiblit chaque motivation.
-2. **Classer** : de la moins importante (à gauche) à la plus importante (à droite), par glisser-déposer, par les boutons ‹ › ou au clavier.
+2. **Classer** : le tableau part vide. On pioche les cartes une à une (pioche mélangée) et on pose chacune à sa place, de la moins importante (à gauche) à la plus importante (à droite), en la glissant ou en touchant un emplacement « + ». Une fois posées, les cartes se déplacent par glisser-déposer, par les boutons ‹ › ou au clavier.
+
+À partir de l'étape 2, un clic sur une carte ouvre son détail (définition et exemples) dans un panneau en bas de l'écran, sans bloquer le reste de la page.
 3. **Évaluer** : chaque carte monte ou descend par rapport à la ligne « Correct » (5 positions, de « En manque » à « Épanoui »).
-4. **Débriefer** : l'outil fait ressortir les priorités (importantes et en manque), les points d'appui et ce qui est à surveiller, avec des questions pour chaque carte. On note des actions (quoi, qui, quand) et des notes, puis on garde une trace : compte rendu copié, impression / PDF, ou fichier `.json` à rouvrir plus tard pour comparer.
+4. **Débriefer** : sous le tableau, les questions pour lancer la discussion ; puis l'outil fait ressortir les priorités (importantes et en manque), les points d'appui et ce qui est à surveiller, avec des questions pour chaque carte. On note des actions (quoi, qui, quand) et des notes, puis on garde une trace : compte rendu copié, impression / PDF, ou fichier `.json` à rouvrir plus tard pour comparer.
 
 Sur mobile, le classement devient une pile verticale (la plus importante en haut) et l'évaluation un curseur horizontal (à droite : épanoui).
 
