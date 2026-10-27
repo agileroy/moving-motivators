@@ -527,15 +527,15 @@ function actionRow(a) {
   return `<li class="action" data-action="${esc(a.id)}">
     <label class="field-wrap action-what"><span class="field-label">${esc(tx.actionWhat)}</span>
       <textarea class="field" rows="2" data-field="what" maxlength="500" placeholder="${esc(tx.actionWhatPlaceholder)}">${esc(a.what)}</textarea></label>
-    <label class="field-wrap"><span class="field-label">${esc(tx.actionWhich)}</span>
+    <label class="field-wrap action-which"><span class="field-label">${esc(tx.actionWhich)}</span>
       <select class="field" data-field="motivator">
         <option value="">${esc(tx.actionNone)}</option>
         ${ids.map((id) => `<option value="${id}" ${a.motivator === id ? 'selected' : ''}>${esc(m(id).name)}</option>`).join('')}
       </select></label>
-    <label class="field-wrap"><span class="field-label">${esc(tx.actionWho)}</span>
+    <label class="field-wrap action-who"><span class="field-label">${esc(tx.actionWho)}</span>
       <input class="field" data-field="who" maxlength="120" value="${esc(a.who)}" placeholder="${esc(tx.actionWhoPlaceholder)}"></label>
-    <label class="field-wrap"><span class="field-label">${esc(tx.actionWhen)}</span>
-      <input class="field" type="date" data-field="when" value="${esc(a.when)}"></label>
+    <label class="field-wrap action-when"><span class="field-label">${esc(tx.actionWhen)}</span>
+      <input class="field" type="date" data-field="when" value="${esc(a.when)}" min="${today()}"></label>
     <button type="button" class="icon-btn" data-remove aria-label="${esc(tx.removeAction)}" title="${esc(tx.removeAction)}">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
   </li>`;
@@ -566,6 +566,7 @@ function renderStep4() {
     <h1 tabindex="-1">${esc(tx.s4Title)}</h1>
     <p class="lede">${esc(tx.s4Lede)}</p>
   </div>
+  <header class="print-report print-head" id="print-head" aria-hidden="true"></header>
   ${sharePanel()}
 
   <section class="debrief-board" aria-labelledby="board-title">
@@ -624,7 +625,7 @@ function renderStep4() {
     <p class="hint">${esc(tx.privacy)}</p>
   </section>
 
-  <section class="print-report" aria-hidden="true"><pre id="print-text"></pre></section>
+  <section class="print-report" id="print-report" aria-hidden="true"></section>
   ${navButtons(null)}`;
 }
 
@@ -646,7 +647,17 @@ function bindStep4() {
     const field = e.target.dataset.field;
     if (!row || !field) return;
     const a = state.actions.find((x) => x.id === row.dataset.action);
-    if (a) { a[field] = e.target.value; save(); }
+    if (!a) return;
+    // Une échéance ne peut pas être dans le passé.
+    if (field === 'when' && e.target.value && e.target.value < today()) {
+      if (e.type === 'change') {
+        e.target.value = a.when && a.when >= today() ? a.when : '';
+        toast(t().actionPastDate);
+      }
+      return;
+    }
+    a[field] = e.target.value;
+    save();
   };
   actions.addEventListener('input', update);
   actions.addEventListener('change', update);
@@ -669,7 +680,7 @@ function onStep4Click(e) {
     return;
   }
   if (e.target.closest('#copy-report')) copyReport();
-  if (e.target.closest('#print')) { $('#print-text').textContent = report(); window.print(); }
+  if (e.target.closest('#print')) { fillPrint(); window.print(); }
   if (e.target.closest('#save-json')) saveJson();
   if (e.target.closest('#open-json')) $('#file-input').click();
   if (e.target.closest('#reset') && window.confirm(t().resetConfirm)) {
@@ -681,6 +692,40 @@ function onStep4Click(e) {
 }
 
 const report = () => buildReport(state, t(), (id) => m(id).name);
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const [y, mo, d] = iso.split('-').map(Number);
+  return new Date(y, mo - 1, d).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/** Version imprimable du débrief (tableau affiché au-dessus) : sujet, lecture, actions et notes. */
+function fillPrint() {
+  const el = $('#print-report');
+  if (!el) return;
+  const tx = t();
+  const { priority, strengths, watch } = analyze(state);
+  const names = (items) => (items.length ? items.map((i) => esc(m(i.id).name)).join(', ') : esc(tx.reportNone));
+  const subject = state.mode === 'change' ? tx.reportModeChange(state.change.trim()) : tx.reportModeToday;
+  const actions = state.actions.filter((a) => a.what.trim() || a.who.trim() || a.when || a.motivator);
+  $('#print-head').innerHTML = `<h1>${esc(tx.reportTitle)}${state.name ? ` · ${esc(state.name)}` : ''}</h1>
+    <p>${esc(subject)}${state.date ? ` · ${esc(formatDate(state.date))}` : ''}</p>`;
+  el.innerHTML = `
+    <dl class="print-read">
+      <dt>${esc(tx.reportPriority)}</dt><dd>${names(priority)}</dd>
+      <dt>${esc(tx.reportStrengths)}</dt><dd>${names(strengths)}</dd>
+      <dt>${esc(tx.reportWatch)}</dt><dd>${names(watch)}</dd>
+    </dl>
+    <h2>${esc(tx.actionsTitle)}</h2>
+    ${actions.length ? `<table class="print-actions">
+      <thead><tr><th>${esc(tx.actionWhat)}</th><th>${esc(tx.actionWhich)}</th><th>${esc(tx.actionWho)}</th><th>${esc(tx.actionWhen)}</th></tr></thead>
+      <tbody>${actions.map((a) => `<tr><td>${esc(a.what.trim())}</td><td>${a.motivator ? esc(m(a.motivator).name) : ''}</td><td>${esc(a.who.trim())}</td><td>${esc(formatDate(a.when))}</td></tr>`).join('')}</tbody>
+    </table>` : `<p>${esc(tx.reportNone)}</p>`}
+    ${state.notes.trim() ? `<h2>${esc(tx.notesTitle)}</h2><p class="print-notes">${esc(state.notes.trim())}</p>` : ''}`;
+}
+
+// Impression lancée depuis le navigateur (Ctrl+P / Cmd+P) : même contenu que le bouton.
+window.addEventListener('beforeprint', () => { if (state.step === 4) fillPrint(); });
 
 async function copyReport() {
   toast(await copyText(report()) ? t().copied : t().copyFailed);

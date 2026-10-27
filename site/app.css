@@ -426,14 +426,21 @@ main.wrap > .deck-hint { margin-top: -16px; }
 
 .actions { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .action {
-  display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 150px) auto;
-  gap: 10px; align-items: end; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-areas: "what what what remove" "which who when .";
+  gap: 10px 12px; align-items: end;
+  padding: 14px 0; border-bottom: 1px solid var(--line);
 }
-.action .icon-btn { width: 44px; height: 44px; }
-@media (max-width: 900px) {
-  .action { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .action-what { grid-column: 1 / -1; }
-  .action .icon-btn { justify-self: end; grid-column: 2; }
+.action:first-child { padding-top: 0; }
+.action-what { grid-area: what; }
+.action-which { grid-area: which; }
+.action-who { grid-area: who; }
+.action-when { grid-area: when; }
+.action .icon-btn { grid-area: remove; width: 44px; height: 44px; align-self: start; margin-top: 27px; }
+.action input[type="date"] { min-width: 0; }
+@media (max-width: 760px) {
+  .action { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "what remove" "which which" "who who" "when when"; }
 }
 .panel--actions > .btn, .panel--export .btn { justify-self: start; }
 .export-row { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -585,7 +592,20 @@ body.has-detail main.wrap { padding-bottom: 260px; }
   main.wrap { padding: 0; gap: 16px; }
   .debrief-board .table { padding: 12px; }
   .lanes { --track: 260px !important; }
-  .print-report { display: block; }
-  .print-report pre { white-space: pre-wrap; font-family: var(--body); font-size: 12pt; line-height: 1.5; margin: 0; }
+  .print-report { display: grid; gap: 10px; font-size: 11pt; line-height: 1.45; }
+  .print-report h1 { font-size: 20pt; }
+  .print-report h2 { font-size: 13pt; margin-top: 8px; }
+  .print-head p { margin: 4px 0 0; color: #333; }
+  .print-head { gap: 0; }
+  .print-read { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; }
+  .print-read dt { font-weight: 600; }
+  .print-read dd { margin: 0; }
+  .print-actions { width: 100%; border-collapse: collapse; }
+  .print-actions th, .print-actions td { border: 1px solid #999; padding: 6px 8px; text-align: left; vertical-align: top; }
+  .print-actions th { background: #eee; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .print-actions tr { break-inside: avoid; }
+  .print-notes { white-space: pre-wrap; margin: 0; }
+  .debrief-board { break-inside: avoid; }
+  .debrief-board > h2, .debrief-board > .hint { display: none; }
   .mcard, .track { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
