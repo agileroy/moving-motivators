@@ -26,7 +26,7 @@ Sur mobile, le classement devient une pile verticale (la plus importante en haut
 1. L'animateur crée une séance : nom, sujet (épanouissement ou effet d'un changement), **nominative** ou **anonyme**.
 2. Il partage le lien participant (ou le QR code). Chacun fait l'exercice sur son appareil ; le sujet est imposé par l'animateur.
 3. À l'étape 4, chaque participant choisit de **partager son tableau** (prénom, classement et positions ; jamais ses actions ni ses notes). Il peut le **retirer** à tout moment ; tant qu'il est partagé, il se met à jour quand il déplace une carte.
-4. L'animateur voit en direct le **tableau d'équipe** (une colonne par carte, rangées par importance moyenne, un point par personne et la position moyenne), ce qui compte le plus, les tensions (cartes importantes et en manque, avec le nombre de personnes concernées), les points forts et, en séance nominative, chaque tableau individuel. Il peut fermer la séance (plus de nouveaux partages), copier une synthèse, retirer un tableau ou supprimer la séance.
+4. L'animateur voit en direct le **tableau d'équipe** (une colonne par carte, rangées par importance moyenne, un point par personne et la position moyenne), les questions de débrief d'équipe, ce qui compte le plus, les points d'attention (cartes importantes et pas assez nourries, avec le nombre de personnes concernées), les points forts et, en séance nominative, chaque tableau individuel. Il peut fermer la séance (plus de nouveaux partages), copier une synthèse, retirer un tableau ou supprimer la séance.
 
 Le lien d'animation porte une clé (`equipe.html?seance=…#cle=…`), gardée dans le navigateur de l'animateur : elle permet de rouvrir la séance depuis un autre appareil. Ne pas la partager.
 

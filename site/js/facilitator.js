@@ -207,19 +207,19 @@ function renderSession() {
     ${n ? `<p class="panel-hint">${esc(tx.fTeamBoardHint)}</p>${teamBoard(rows)}` : `<p class="empty waiting">${esc(tx.fWaiting)}</p>`}
   </section>
 
-  ${n ? `<div class="team-grid">
+  ${n ? `<section class="panel panel--discussion" aria-labelledby="q-title">
+    <h2 id="q-title">${esc(tx.fQuestionsTitle)}</h2>
+    <ol class="discussion">${tx.fQuestions.map((q) => `<li>${esc(q)}</li>`).join('')}</ol>
+  </section>
+
+  <div class="team-grid">
     <section class="panel" aria-labelledby="top-title"><h2 id="top-title">${esc(tx.fTop)}</h2><p class="panel-hint">${esc(tx.fTopHint)}</p>
       ${insightList(top, (r) => tx.fAvg(formatAvg(r.avgRank, lang)))}</section>
-    <section class="panel panel--priority" aria-labelledby="ten-title"><h2 id="ten-title">${esc(tx.fTensions)}</h2><p class="panel-hint">${esc(tx.fTensionsHint)}</p>
+    <section class="panel panel--attention" aria-labelledby="ten-title"><h2 id="ten-title">${esc(tx.fTensions)}</h2><p class="panel-hint">${esc(tx.fTensionsHint)}</p>
       ${insightList(tensions, (r) => tx.fPeopleCount(r.priority, n))}</section>
     <section class="panel" aria-labelledby="str-title"><h2 id="str-title">${esc(tx.fStrengths)}</h2><p class="panel-hint">${esc(tx.fStrengthsHint)}</p>
       ${insightList(strengths, (r) => tx.fAvg(formatAvg(r.avgRank, lang)))}</section>
   </div>
-
-  <section class="panel" aria-labelledby="q-title">
-    <h2 id="q-title">${esc(tx.fQuestionsTitle)}</h2>
-    <ul class="questions">${tx.fQuestions.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>
-  </section>
 
   <section class="panel" aria-labelledby="people-title">
     <h2 id="people-title">${esc(tx.fPeople)}</h2>
