@@ -15,7 +15,7 @@ Atelier individuel inspiré de la pratique **Moving Motivators** de [Management 
 3. **Évaluer** : chaque carte monte ou descend par rapport à la ligne « Correct » (5 positions, de « En manque » à « Épanoui »).
 4. **Débriefer** : sous le tableau, les questions pour lancer la discussion ; puis l'outil fait ressortir les priorités (importantes et en manque), les points d'appui et ce qui est à surveiller, avec des questions pour chaque carte. On note des actions (quoi, qui, quand) et des notes, puis on garde une trace : compte rendu copié, impression / PDF, ou fichier `.json` (« Enregistrer la séance »). Ce fichier se rouvre depuis le lien « Reprendre une séance enregistrée », sous l'introduction de l'étape 1, par exemple pour comparer avec une nouvelle séance quelques mois plus tard.
 
-Quand une séance est déjà entamée dans le navigateur, l'étape 1 propose « Continuer la séance en cours » (retour à la dernière étape atteinte) ou « Commencer une nouvelle séance » (après confirmation) à la place de « Piocher les cartes ».
+Quand une séance est déjà entamée dans le navigateur, l'étape 1 propose « Continuer la séance en cours » (retour à la dernière étape atteinte) ou « Commencer une nouvelle séance » (après confirmation : garde le prénom et le sujet saisis sur la page et ouvre directement la pioche) à la place de « Piocher les cartes ».
 
 Sur mobile, le classement devient une pile verticale (la plus importante en haut) et l'évaluation un curseur horizontal (à droite : épanoui).
 

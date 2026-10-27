@@ -132,13 +132,19 @@ const inProgress = () => state.reached > 1 || state.placed.length > 0;
 /** Étape où reprendre : la plus avancée atteinte (le classement doit être fini pour aller au-delà). */
 const resumeStep = () => Math.max(2, Math.min(state.reached, rankingDone(state) ? 4 : 2));
 
-/** Efface la séance en cours (après confirmation) et revient à l'étape 1. */
-function startNewSession() {
+/**
+ * Efface la séance en cours (après confirmation).
+ * Depuis l'étape 1 : garde le prénom et le sujet saisis sur la page et passe directement à la pioche.
+ * Depuis le débrief : revient à l'étape 1 pour saisir les informations de la nouvelle séance.
+ */
+function startNewSession({ fromHome = false } = {}) {
   if (!window.confirm(t().resetConfirm)) return;
+  const { name, mode, change } = state;
   state = newSession();
+  if (fromHome) Object.assign(state, { name, mode, change });
   if (team.sid) team.applyMeta(state);
   save();
-  goTo(1);
+  goTo(fromHome ? 2 : 1);
 }
 
 function bindStep1() {
@@ -146,7 +152,7 @@ function bindStep1() {
     const btn = e.target.closest('[data-detail]');
     if (btn) showCardDetail(btn.dataset.detail, lang);
     if (e.target.closest('#open-json')) $('#file-input').click();
-    if (e.target.closest('[data-new-session]')) startNewSession();
+    if (e.target.closest('[data-new-session]')) startNewSession({ fromHome: true });
   }, { signal: stepSignal() });
   const form = $('#setup');
   form.addEventListener('submit', (e) => e.preventDefault());
