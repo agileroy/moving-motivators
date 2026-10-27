@@ -33,6 +33,9 @@ function loadSession() {
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* non mémorisé */ }
   boardChanged();
+  // La version imprimable du débrief suit chaque saisie : certains navigateurs (Safari notamment)
+  // impriment la page telle qu'elle était avant le clic, sans les changements faits juste avant.
+  if (state.step === 4) fillPrint();
 }
 
 /* ---------- Aides ---------- */
@@ -668,6 +671,7 @@ function addAction(motivator) {
 }
 
 function bindStep4() {
+  fillPrint();
   bindSharePanel();
   main.addEventListener('click', onStep4Click, { signal: stepSignal() });
   const actions = $('#actions');
@@ -709,7 +713,11 @@ function onStep4Click(e) {
     return;
   }
   if (e.target.closest('#copy-report')) copyReport();
-  if (e.target.closest('#print')) { fillPrint(); window.print(); }
+  if (e.target.closest('#print')) {
+    fillPrint();
+    // Laisse le navigateur afficher le contenu à jour avant d'ouvrir l'impression.
+    requestAnimationFrame(() => setTimeout(() => window.print(), 50));
+  }
   if (e.target.closest('#save-json')) saveJson();
   if (e.target.closest('#reset')) startNewSession();
 }
