@@ -450,6 +450,7 @@ export const UI = {
 
     // Séance d'équipe : animateur
     fTitle: 'Séance d\'équipe',
+    fBackHome: 'Retour à l\'accueil',
     fLede: 'Chacun fait l\'exercice sur son téléphone ou son ordinateur, puis partage son tableau. Vous voyez la vue d\'équipe se construire en direct.',
     fCreateTitle: 'Nouvelle séance',
     fNameLabel: 'Nom de la séance',
@@ -680,6 +681,7 @@ export const UI = {
 
     // Team session: facilitator
     fTitle: 'Team session',
+    fBackHome: 'Back to the home page',
     fLede: 'Everyone does the exercise on their phone or computer, then shares their board. You watch the team view build up live.',
     fCreateTitle: 'New session',
     fNameLabel: 'Session name',

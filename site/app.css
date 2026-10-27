@@ -238,6 +238,8 @@ main.wrap > .deck-hint { margin-top: -16px; }
 .examples { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: grid; gap: 2px; }
 .examples li::marker { color: var(--accent); }
 
+.back-link { font-weight: 600; }
+.back-link::before { content: "‹ "; }
 .resume { margin: 4px 0 0; font-size: 15px; color: var(--muted); }
 .resume-hint { font-size: 13px; }
 .link-btn {

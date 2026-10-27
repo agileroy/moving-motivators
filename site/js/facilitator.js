@@ -82,6 +82,7 @@ function renderHome() {
   const mine = hosted();
   return `
   <div class="intro">
+    <p class="hint"><a class="back-link" href="./?accueil=1">${esc(tx.fBackHome)}</a></p>
     <h1 tabindex="-1">${esc(tx.fTitle)}</h1>
     <p class="lede">${esc(tx.fLede)}</p>
     <p class="resume">${esc(tx.fResumeLead)} <button type="button" class="link-btn" id="open-team-json" aria-describedby="team-resume-hint">${esc(tx.fResumeAction)}</button>
@@ -518,7 +519,7 @@ function render() {
     main.innerHTML = renderSession();
   } else {
     const message = { connecting: tx.fConnecting, denied: tx.fNoAccess, offline: tx.fOffline }[view];
-    main.innerHTML = `<div class="intro"><h1 tabindex="-1">${esc(tx.fTitle)}</h1><p class="lede">${esc(message)}</p>
+    main.innerHTML = `<div class="intro"><p class="hint"><a class="back-link" href="./?accueil=1">${esc(tx.fBackHome)}</a></p><h1 tabindex="-1">${esc(tx.fTitle)}</h1><p class="lede">${esc(message)}</p>
       ${view !== 'connecting' ? `<p><a class="btn btn-quiet" href="./equipe.html">${esc(tx.fAllSessions)}</a></p>` : ''}</div>`;
   }
 }

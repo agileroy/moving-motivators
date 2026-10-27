@@ -20,6 +20,13 @@ const team = initTeam({ getLang: () => lang, getState: () => state, rerender: ()
 const STORE_KEY = sessionKey(team.sid);
 let state = loadSession();
 if (team.sid) team.applyMeta(state);
+// Lien « Retour à l'accueil » (page d'animation) : on ouvre l'étape 1, la séance en cours reste disponible.
+if (new URLSearchParams(location.search).get('accueil') === '1') {
+  state.step = 1;
+  const url = new URL(location.href);
+  url.searchParams.delete('accueil');
+  history.replaceState(null, '', url);
+}
 
 /* ---------- Stockage ---------- */
 
