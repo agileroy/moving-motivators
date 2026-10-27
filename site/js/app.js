@@ -116,6 +116,13 @@ function renderStep1() {
       </label>`}
     </div>
   </form>
+  <section class="resume" aria-labelledby="resume-title">
+    <div>
+      <h2 id="resume-title">${esc(tx.resumeTitle)}</h2>
+      <p class="hint">${esc(tx.resumeHint)}</p>
+    </div>
+    <button type="button" class="btn btn-quiet" id="open-json">${esc(tx.openJson)}</button>
+  </section>
   ${navButtons(tx.s1Next)}`;
 }
 
@@ -123,6 +130,7 @@ function bindStep1() {
   main.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-detail]');
     if (btn) showCardDetail(btn.dataset.detail, lang);
+    if (e.target.closest('#open-json')) $('#file-input').click();
   }, { signal: stepSignal() });
   const form = $('#setup');
   form.addEventListener('submit', (e) => e.preventDefault());
@@ -619,7 +627,6 @@ function renderStep4() {
       <button type="button" class="btn btn-primary" id="copy-report">${esc(tx.copyReport)}</button>
       <button type="button" class="btn btn-quiet" id="print">${esc(tx.print)}</button>
       <button type="button" class="btn btn-quiet" id="save-json">${esc(tx.saveJson)}</button>
-      <button type="button" class="btn btn-quiet" id="open-json">${esc(tx.openJson)}</button>
       <button type="button" class="btn btn-danger" id="reset">${esc(tx.reset)}</button>
     </div>
     <p class="hint">${esc(tx.privacy)}</p>
@@ -682,7 +689,6 @@ function onStep4Click(e) {
   if (e.target.closest('#copy-report')) copyReport();
   if (e.target.closest('#print')) { fillPrint(); window.print(); }
   if (e.target.closest('#save-json')) saveJson();
-  if (e.target.closest('#open-json')) $('#file-input').click();
   if (e.target.closest('#reset') && window.confirm(t().resetConfirm)) {
     state = newSession();
     if (team.sid) team.applyMeta(state);

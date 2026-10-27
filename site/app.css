@@ -238,6 +238,13 @@ main.wrap > .deck-hint { margin-top: -16px; }
 .examples { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: grid; gap: 2px; }
 .examples li::marker { color: var(--accent); }
 
+.resume {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap;
+  padding: 16px 20px; border: 1px dashed var(--line); border-radius: 14px;
+}
+.resume > div { display: grid; gap: 4px; max-width: 70ch; }
+.resume h2 { font-size: 17px; }
+
 /* ---------- Le tapis (étapes 2 et 3) ---------- */
 
 .table {
