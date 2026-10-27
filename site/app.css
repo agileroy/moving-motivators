@@ -490,6 +490,11 @@ main.wrap > .deck-hint { margin-top: -16px; }
 body.has-detail main.wrap { padding-bottom: 260px; }
 @media print { .card-detail { display: none !important; } }
 
+.stepnav--resume { align-items: center; flex-wrap: wrap; }
+.stepnav--resume > .hint { margin: 0; }
+@media (max-width: 560px) {
+  .stepnav--resume .next-wrap { flex-direction: column-reverse; align-items: stretch; width: 100%; }
+}
 .next-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
 .btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }
 

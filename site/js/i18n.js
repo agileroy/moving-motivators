@@ -325,6 +325,9 @@ export const UI = {
     changePlaceholder: 'Ex. : passage en équipe produit, nouveau manager…',
     examples: 'Par exemple',
     s1Next: 'Piocher les cartes',
+    s1Continue: 'Continuer la séance en cours',
+    s1NewSession: 'Commencer une nouvelle séance',
+    s1InProgress: (step) => `Une séance est en cours dans ce navigateur (dernière étape : ${step}).`,
 
     s2Title: 'Classez les cartes',
     s2Lede: 'Piochez les cartes une à une et placez chacune dans le tableau : la moins importante pour vous à gauche, la plus importante à droite. Demandez-vous à chaque fois où elle se situe par rapport aux autres.',
@@ -408,7 +411,7 @@ export const UI = {
     resumeHint: '(fichier .json créé avec « Enregistrer la séance » à la fin d\'une séance)',
     opened: 'Séance ouverte',
     openFailed: 'Ce fichier n\'est pas une séance Moving Motivators : choisissez le fichier .json créé avec « Enregistrer la séance ».',
-    reset: 'Nouvelle séance',
+    reset: 'Commencer une nouvelle séance',
     resetConfirm: 'Effacer cette séance et recommencer ? Pensez à l\'enregistrer avant si vous voulez la garder.',
     privacy: 'Tout reste dans ce navigateur : rien n\'est envoyé sur un serveur.',
 
@@ -543,6 +546,9 @@ export const UI = {
     changePlaceholder: 'e.g. moving to a product team, new manager…',
     examples: 'For example',
     s1Next: 'Draw the cards',
+    s1Continue: 'Continue the current session',
+    s1NewSession: 'Start a new session',
+    s1InProgress: (step) => `A session is in progress in this browser (last step: ${step}).`,
 
     s2Title: 'Rank the cards',
     s2Lede: 'Draw the cards one by one and place each on the board: least important to you on the left, most important on the right. Each time, ask yourself where it sits compared with the others.',
@@ -626,7 +632,7 @@ export const UI = {
     resumeHint: '(the .json file created with "Save the session" at the end of a session)',
     opened: 'Session opened',
     openFailed: 'This file is not a Moving Motivators session: choose the .json file created with "Save the session".',
-    reset: 'New session',
+    reset: 'Start a new session',
     resetConfirm: 'Clear this session and start over? Save it first if you want to keep it.',
     privacy: 'Everything stays in this browser: nothing is sent to a server.',
 

@@ -118,7 +118,27 @@ function renderStep1() {
       </label>`}
     </div>
   </form>
-  ${navButtons(tx.s1Next)}`;
+  ${inProgress() ? `<div class="stepnav stepnav--resume">
+    <p class="hint">${esc(tx.s1InProgress(tx.steps[resumeStep() - 1]))}</p>
+    <div class="next-wrap">
+      <button type="button" class="btn btn-quiet" data-new-session>${esc(tx.s1NewSession)}</button>
+      <button type="button" class="btn btn-primary" data-go="${resumeStep()}">${esc(tx.s1Continue)}</button>
+    </div>
+  </div>` : navButtons(tx.s1Next)}`;
+}
+
+/** Une séance est entamée dans ce navigateur : cartes posées ou étape 2 déjà atteinte. */
+const inProgress = () => state.reached > 1 || state.placed.length > 0;
+/** Étape où reprendre : la plus avancée atteinte (le classement doit être fini pour aller au-delà). */
+const resumeStep = () => Math.max(2, Math.min(state.reached, rankingDone(state) ? 4 : 2));
+
+/** Efface la séance en cours (après confirmation) et revient à l'étape 1. */
+function startNewSession() {
+  if (!window.confirm(t().resetConfirm)) return;
+  state = newSession();
+  if (team.sid) team.applyMeta(state);
+  save();
+  goTo(1);
 }
 
 function bindStep1() {
@@ -126,6 +146,7 @@ function bindStep1() {
     const btn = e.target.closest('[data-detail]');
     if (btn) showCardDetail(btn.dataset.detail, lang);
     if (e.target.closest('#open-json')) $('#file-input').click();
+    if (e.target.closest('[data-new-session]')) startNewSession();
   }, { signal: stepSignal() });
   const form = $('#setup');
   form.addEventListener('submit', (e) => e.preventDefault());
@@ -684,12 +705,7 @@ function onStep4Click(e) {
   if (e.target.closest('#copy-report')) copyReport();
   if (e.target.closest('#print')) { fillPrint(); window.print(); }
   if (e.target.closest('#save-json')) saveJson();
-  if (e.target.closest('#reset') && window.confirm(t().resetConfirm)) {
-    state = newSession();
-    if (team.sid) team.applyMeta(state);
-    save();
-    goTo(1);
-  }
+  if (e.target.closest('#reset')) startNewSession();
 }
 
 const report = () => buildReport(state, t(), (id) => m(id).name);
