@@ -217,23 +217,26 @@ textarea.field { resize: vertical; line-height: 1.45; }
   .change-wrap { grid-column: auto; }
 }
 
-.deck { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.motive {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start;
-  padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+.deck-strip {
+  list-style: none; margin: 0; padding: clamp(14px, 2.4vw, 28px);
+  display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(6px, 1vw, 12px);
+  background: var(--felt); border: 1px solid var(--line); border-radius: 18px;
 }
-.motive-text { display: grid; gap: 6px; }
-.motive h3 { font-size: 22px; }
+.deck-card { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 12px; }
+.deck-card .mcard { transition: transform .15s ease; }
+.deck-card:hover .mcard { transform: translateY(-4px); }
+main.wrap > .deck-hint { margin-top: -16px; }
+@media (max-width: 860px) { .deck-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .deck-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .deck-card .mcard { transition: none; } .deck-card:hover .mcard { transform: none; } }
+
+/* Définition et exemples d'une carte (pioche, panneau de détail) */
 .tagline { margin: 0; }
 .examples-label { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); }
 .examples { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; display: grid; gap: 2px; }
 .examples li::marker { color: var(--accent); }
-@media (max-width: 860px) { .deck { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 440px) {
-  .motive { grid-template-columns: minmax(0, 1fr); }
-  .motive .mcard--full { width: 96px; }
-  .motive h3 { display: none; }
-}
 
 /* ---------- Le tapis (étapes 2 et 3) ---------- */
 

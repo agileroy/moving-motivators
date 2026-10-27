@@ -6,7 +6,7 @@ Atelier individuel inspiré de la pratique **Moving Motivators** de [Management 
 
 ## Déroulé
 
-1. **Découvrir** : les dix cartes, avec une définition et trois exemples chacune. On choisit aussi le sujet de la séance :
+1. **Découvrir** : un aperçu des dix cartes (le détail de chacune se lit en la piochant, ou d'un clic), puis le choix du sujet de la séance :
    - *Mon épanouissement aujourd'hui* (par défaut) : chaque motivation est-elle nourrie dans le travail actuel ?
    - *L'effet d'un changement* : la variante d'origine de Management 3.0, où l'on regarde si un changement renforce ou affaiblit chaque motivation.
 2. **Classer** : le tableau part vide. On pioche les cartes une à une (pioche mélangée) et on pose chacune à sa place, de la moins importante (à gauche) à la plus importante (à droite), en la glissant ou en touchant un emplacement « + ». Une fois posées, les cartes se déplacent par glisser-déposer, par les boutons ‹ › ou au clavier.

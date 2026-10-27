@@ -90,6 +90,10 @@ function renderStep1() {
     <h1 tabindex="-1">${esc(tx.s1Title)}</h1>
     <p class="lede">${esc(tx.s1Lede)}</p>
   </div>
+  <ul class="deck-strip" aria-label="${esc(tx.s1DeckLabel)}">
+    ${deck.map((id) => `<li><button type="button" class="deck-card" data-detail="${id}" aria-label="${esc(m(id).name)}">${card(id, 'mcard--board')}</button></li>`).join('')}
+  </ul>
+  <p class="hint deck-hint">${esc(tx.s1DeckHint)}</p>
   <form class="setup" id="setup" autocomplete="off">
     <h2>${esc(tx.setupTitle)}</h2>
     <div class="setup-grid">
@@ -112,22 +116,14 @@ function renderStep1() {
       </label>`}
     </div>
   </form>
-  <ul class="deck">
-    ${deck.map((id) => `
-      <li class="motive">
-        ${card(id, 'mcard--full')}
-        <div class="motive-text">
-          <h3>${esc(m(id).name)}</h3>
-          <p class="tagline">${esc(m(id).tagline)}</p>
-          <p class="examples-label">${esc(tx.examples)}</p>
-          <ul class="examples">${m(id).examples.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
-        </div>
-      </li>`).join('')}
-  </ul>
   ${navButtons(tx.s1Next)}`;
 }
 
 function bindStep1() {
+  main.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-detail]');
+    if (btn) showCardDetail(btn.dataset.detail, lang);
+  }, { signal: stepSignal() });
   const form = $('#setup');
   form.addEventListener('submit', (e) => e.preventDefault());
   form.addEventListener('input', (e) => {

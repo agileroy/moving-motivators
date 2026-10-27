@@ -310,7 +310,9 @@ export const UI = {
     footer: 'Moving Motivators est un exercice de Management 3.0. Cartes, pictogrammes et textes de cet outil : création originale. Vos réponses restent dans ce navigateur.',
 
     s1Title: 'Découvrez les dix motivations',
-    s1Lede: 'Lisez chaque carte et ses exemples. Il n\'y a pas de bonne réponse : ce qui compte, c\'est ce qui vous fait avancer, vous.',
+    s1Lede: 'Dix cartes, dix sources de motivation au travail. Il n\'y a pas de bonne réponse : ce qui compte, c\'est ce qui vous fait avancer, vous. Vous lirez chaque carte en détail en la piochant, à l\'étape suivante.',
+    s1DeckLabel: 'Les dix cartes',
+    s1DeckHint: 'Touchez une carte pour lire sa définition, si vous voulez la découvrir dès maintenant.',
     setupTitle: 'Votre séance',
     nameLabel: 'Prénom (facultatif)',
     namePlaceholder: 'Ex. : Camille',
@@ -322,7 +324,7 @@ export const UI = {
     changeLabel: 'Quel changement ?',
     changePlaceholder: 'Ex. : passage en équipe produit, nouveau manager…',
     examples: 'Par exemple',
-    s1Next: 'Classer les cartes',
+    s1Next: 'Piocher les cartes',
 
     s2Title: 'Classez les cartes',
     s2Lede: 'Piochez les cartes une à une et placez chacune dans le tableau : la moins importante pour vous à gauche, la plus importante à droite. Demandez-vous à chaque fois où elle se situe par rapport aux autres.',
@@ -522,7 +524,9 @@ export const UI = {
     footer: 'Moving Motivators is a Management 3.0 practice. The cards, icons and texts in this tool are original. Your answers stay in this browser.',
 
     s1Title: 'Discover the ten motivators',
-    s1Lede: 'Read each card and its examples. There is no right answer: what matters is what drives you.',
+    s1Lede: 'Ten cards, ten sources of motivation at work. There is no right answer: what matters is what drives you. You will read each card in detail as you draw it, in the next step.',
+    s1DeckLabel: 'The ten cards',
+    s1DeckHint: 'Tap a card to read its definition, if you want to look at it now.',
     setupTitle: 'Your session',
     nameLabel: 'First name (optional)',
     namePlaceholder: 'e.g. Sam',
@@ -534,7 +538,7 @@ export const UI = {
     changeLabel: 'Which change?',
     changePlaceholder: 'e.g. moving to a product team, new manager…',
     examples: 'For example',
-    s1Next: 'Rank the cards',
+    s1Next: 'Draw the cards',
 
     s2Title: 'Rank the cards',
     s2Lede: 'Draw the cards one by one and place each on the board: least important to you on the left, most important on the right. Each time, ask yourself where it sits compared with the others.',
