@@ -89,6 +89,8 @@ function renderStep1() {
   <div class="intro">
     <h1 tabindex="-1">${esc(tx.s1Title)}</h1>
     <p class="lede">${esc(tx.s1Lede)}</p>
+    <p class="resume">${esc(tx.resumeLead)} <button type="button" class="link-btn" id="open-json" aria-describedby="resume-hint">${esc(tx.resumeAction)}</button>
+      <span class="resume-hint" id="resume-hint">${esc(tx.resumeHint)}</span></p>
   </div>
   <ul class="deck-strip" aria-label="${esc(tx.s1DeckLabel)}">
     ${deck.map((id) => `<li><button type="button" class="deck-card" data-detail="${id}" aria-label="${esc(m(id).name)}">${card(id, 'mcard--board')}</button></li>`).join('')}
@@ -116,13 +118,6 @@ function renderStep1() {
       </label>`}
     </div>
   </form>
-  <section class="resume" aria-labelledby="resume-title">
-    <div>
-      <h2 id="resume-title">${esc(tx.resumeTitle)}</h2>
-      <p class="hint">${esc(tx.resumeHint)}</p>
-    </div>
-    <button type="button" class="btn btn-quiet" id="open-json">${esc(tx.openJson)}</button>
-  </section>
   ${navButtons(tx.s1Next)}`;
 }
 
