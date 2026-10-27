@@ -599,7 +599,7 @@ function renderStep4() {
     <h1 tabindex="-1">${esc(tx.s4Title)}</h1>
     <p class="lede">${esc(tx.s4Lede)}</p>
   </div>
-  <header class="print-report print-head" id="print-head" aria-hidden="true"></header>
+  <header class="print-only print-head" id="print-head">${printHeadHtml()}</header>
   ${sharePanel()}
 
   <section class="debrief-board" aria-labelledby="board-title">
@@ -657,7 +657,7 @@ function renderStep4() {
     <p class="hint">${esc(tx.privacy)}</p>
   </section>
 
-  <section class="print-report" id="print-report" aria-hidden="true"></section>
+  <section class="print-only print-report" id="print-report">${printReportHtml()}</section>
   ${navButtons(null)}`;
 }
 
@@ -731,17 +731,19 @@ function formatDate(iso) {
 }
 
 /** Version imprimable du débrief (tableau affiché au-dessus) : sujet, lecture, actions et notes. */
-function fillPrint() {
-  const el = $('#print-report');
-  if (!el) return;
+function printHeadHtml() {
+  const tx = t();
+  const subject = state.mode === 'change' ? tx.reportModeChange(state.change.trim()) : tx.reportModeToday;
+  return `<h1>${esc(tx.reportTitle)}${state.name ? ` · ${esc(state.name)}` : ''}</h1>
+    <p>${esc(subject)}${state.date ? ` · ${esc(formatDate(state.date))}` : ''}</p>`;
+}
+
+function printReportHtml() {
   const tx = t();
   const { priority, strengths, watch } = analyze(state);
   const names = (items) => (items.length ? items.map((i) => esc(m(i.id).name)).join(', ') : esc(tx.reportNone));
-  const subject = state.mode === 'change' ? tx.reportModeChange(state.change.trim()) : tx.reportModeToday;
   const actions = state.actions.filter((a) => a.what.trim() || a.who.trim() || a.when || a.motivator);
-  $('#print-head').innerHTML = `<h1>${esc(tx.reportTitle)}${state.name ? ` · ${esc(state.name)}` : ''}</h1>
-    <p>${esc(subject)}${state.date ? ` · ${esc(formatDate(state.date))}` : ''}</p>`;
-  el.innerHTML = `
+  return `
     <dl class="print-read">
       <dt>${esc(tx.reportPriority)}</dt><dd>${names(priority)}</dd>
       <dt>${esc(tx.reportStrengths)}</dt><dd>${names(strengths)}</dd>
@@ -753,6 +755,14 @@ function fillPrint() {
       <tbody>${actions.map((a) => `<tr><td>${esc(a.what.trim())}</td><td>${a.motivator ? esc(m(a.motivator).name) : ''}</td><td>${esc(a.who.trim())}</td><td>${esc(formatDate(a.when))}</td></tr>`).join('')}</tbody>
     </table>` : `<p>${esc(tx.reportNone)}</p>`}
     ${state.notes.trim() ? `<h2>${esc(tx.notesTitle)}</h2><p class="print-notes">${esc(state.notes.trim())}</p>` : ''}`;
+}
+
+/** Met à jour la version imprimable (elle est aussi écrite directement dans la page au rendu de l'étape 4). */
+function fillPrint() {
+  const head = $('#print-head');
+  const report = $('#print-report');
+  if (head) head.innerHTML = printHeadHtml();
+  if (report) report.innerHTML = printReportHtml();
 }
 
 // Impression lancée depuis le navigateur (Ctrl+P / Cmd+P) : même contenu que le bouton.
@@ -828,7 +838,10 @@ $$('.lang button').forEach((b) => b.addEventListener('click', () => {
 }));
 
 // Le passage mobile / bureau change la disposition (pile ou rangée) : on redessine l'étape.
-stackMQ.addEventListener('change', () => render());
+let printing = false;
+window.addEventListener('beforeprint', () => { printing = true; });
+window.addEventListener('afterprint', () => { printing = false; render(); });
+stackMQ.addEventListener('change', () => { if (!printing) render(); });
 
 /* ---------- Thème ---------- */
 
