@@ -2,7 +2,7 @@
 
 Atelier inspiré de la pratique **Moving Motivators** de [Management 3.0](https://management30.com/practice/moving-motivators/), seul ou en équipe : découvrir dix motivations, les classer, les évaluer, puis en tirer des actions.
 
-**Ouvrir l'outil :** https://vinchou59.github.io/moving-motivators/ (anglais : `?lang=en`)
+**Ouvrir l'outil :** https://agileroy.github.io/moving-motivators/ (anglais : `?lang=en`)
 
 ## Déroulé
 
