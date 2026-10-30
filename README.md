@@ -51,7 +51,7 @@ Site statique (HTML, CSS, JavaScript en modules, sans build), publié sur GitHub
 - `site/js/team-store.js` : seul module qui parle à Firebase ;
 - `site/js/team-participant.js` : côté participant (bandeau, partage, retrait) ;
 - `site/js/facilitator.js` : page d'animation (`equipe.html`) ;
-- `database.rules.json` : règles de sécurité de **toute** la base. La console Firebase n'accepte qu'un fichier de règles par base : garder ce fichier identique à celui de `poker-planning`, `matrice-competences` et `wheel-of-chance`, et le publier dans la console après chaque modification.
+- `database.rules.json` : règles de sécurité de **toute** la base. La console Firebase n'accepte qu'un fichier de règles par base : garder ce fichier identique à celui de `poker-planning`, `matrice-competences`, `wheel-of-chance` et `roles-responsabilites`, et le publier dans la console après chaque modification.
 
 ### Données (branche `movingMotivators`)
 
