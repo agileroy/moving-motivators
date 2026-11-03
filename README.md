@@ -40,7 +40,7 @@ Comme pour le poker planning, le VPN de l'entreprise (proxy Zscaler) bloque Fire
 
 ## Architecture
 
-Site statique (HTML, CSS, JavaScript en modules, sans build), publié sur GitHub Pages. Les séances d'équipe utilisent Firebase Realtime Database (connexion anonyme), branche `movingMotivators` de la base du projet `poker-planning-vleroy`, partagée avec le poker planning, la matrice de compétences et la roue de la chance.
+Site statique (HTML, CSS, JavaScript en modules, sans build), publié sur GitHub Pages. Les séances d'équipe utilisent Firebase Realtime Database (connexion anonyme), branche `movingMotivators` du projet Firebase propre à l'outil (`moving-motivators-vleroy`).
 
 - `site/js/core.js` : logique pure (classement, positions, analyse, compte rendu, validation des fichiers), testée avec Node.js ;
 - `site/js/i18n.js` : textes FR / EN et contenu des cartes ;
@@ -51,7 +51,7 @@ Site statique (HTML, CSS, JavaScript en modules, sans build), publié sur GitHub
 - `site/js/team-store.js` : seul module qui parle à Firebase ;
 - `site/js/team-participant.js` : côté participant (bandeau, partage, retrait) ;
 - `site/js/facilitator.js` : page d'animation (`equipe.html`) ;
-- `database.rules.json` : règles de sécurité de **toute** la base. La console Firebase n'accepte qu'un fichier de règles par base : garder ce fichier identique à celui de `poker-planning`, `matrice-competences`, `wheel-of-chance` et `roles-responsabilites`, et le publier dans la console après chaque modification.
+- `database.rules.json` : règles de sécurité de la base, limitées à la branche `movingMotivators` (projet désigné par `firebase.json` et `.firebaserc`). Elles sont publiées automatiquement à chaque push sur `main`, après les tests, par le job `rules` du workflow (Firebase CLI avec le compte de service du secret `FIREBASE_SERVICE_ACCOUNT`) ; sans ce secret, le job est sauté avec un avertissement et les règles sont à publier à la main dans la console Firebase.
 
 ### Données (branche `movingMotivators`)
 
@@ -73,7 +73,7 @@ npm test        # tests du cœur métier
 npm run serve   # http://localhost:8080
 ```
 
-Chaque push sur `main` lance les tests puis publie `site/` sur GitHub Pages ; un test en échec bloque la publication.
+Chaque push sur `main` lance les tests, publie les règles Firebase puis publie `site/` sur GitHub Pages ; un test en échec bloque les deux publications.
 
 ## Droits
 

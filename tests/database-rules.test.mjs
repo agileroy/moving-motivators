@@ -7,8 +7,9 @@ import { metaFor, sharePayload } from '../site/js/team-core.js';
 const rules = JSON.parse(readFileSync(new URL('../database.rules.json', import.meta.url), 'utf8')).rules;
 const branch = rules.movingMotivators;
 
-test('la branche movingMotivators existe, la racine est fermée', () => {
+test('projet dédié : le fichier ne contient que la branche movingMotivators, tout le reste est fermé', () => {
   assert.ok(branch);
+  assert.deepEqual(Object.keys(rules).sort(), ['.read', '.write', 'movingMotivators']);
   assert.equal(rules['.read'], false);
   assert.equal(rules['.write'], false);
 });
@@ -62,4 +63,12 @@ test('les règles n\'utilisent ni ternaire ni modulo (non pris en charge partout
   const text = JSON.stringify(branch);
   assert.ok(!/ \? /.test(text));
   assert.ok(!/ % /.test(text));
+});
+
+test('firebase.json et .firebaserc publient ce fichier dans le projet de Moving Motivators', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const config = JSON.parse(await readFile(new URL('../firebase.json', import.meta.url), 'utf8'));
+  assert.deepEqual(config, { database: { rules: 'database.rules.json' } });
+  const rc = JSON.parse(await readFile(new URL('../.firebaserc', import.meta.url), 'utf8'));
+  assert.equal(rc.projects.default, 'moving-motivators-vleroy');
 });
