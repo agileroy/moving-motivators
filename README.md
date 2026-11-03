@@ -75,6 +75,10 @@ npm run serve   # http://localhost:8080
 
 Chaque push sur `main` lance les tests, publie les règles Firebase puis publie `site/` sur GitHub Pages ; un test en échec bloque les deux publications.
 
+## Méthode
+
+Le projet suit le développement piloté par les spécifications avec [OpenSpec](https://github.com/Fission-AI/OpenSpec) : `openspec/specs/` décrit le comportement attendu, `openspec/changes/` les changements en cours. Commandes Claude Code : `/opsx:explore`, `/opsx:propose`, `/opsx:apply`, `/opsx:archive`.
+
 ## Droits
 
 Moving Motivators est une pratique de Management 3.0. Les cartes, pictogrammes, définitions, exemples et questions de cet outil sont une création originale : ce ne sont pas les cartes officielles.

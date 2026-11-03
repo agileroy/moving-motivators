@@ -1,0 +1,22 @@
+schema: spec-driven
+
+# Project context: constraints an agent cannot infer from the code.
+context: |
+  Rédiger tous les artefacts OpenSpec (proposal, design, specs, tasks) en français.
+  Atelier inspiré de la pratique Moving Motivators de Management 3.0, seul ou en équipe, sans publicité, dépôt public.
+  Dix motivations : curiosity, honor, acceptance, mastery, power, freedom, relatedness, order, goal, status.
+  Cartes, pictogrammes, définitions, exemples et questions sont une création originale, pas les cartes officielles.
+  Interface en français et en anglais (?lang=en, choix mémorisé).
+  Hébergement : site statique sur GitHub Pages (https://agileroy.github.io/moving-motivators/), sans serveur.
+  Exercice seul : aucune donnée ne quitte le navigateur, Firebase n'est pas chargé.
+  Séance d'équipe (equipe.html) : Firebase Realtime Database (offre gratuite, connexion anonyme) dans un projet
+  dédié (moving-motivators-vleroy), branche movingMotivators ; database.rules.json ne contient que cette branche et
+  est publié automatiquement par GitHub Actions après les tests (secret FIREBASE_SERVICE_ACCOUNT).
+  Seuls les tableaux partagés volontairement vont dans la base ; jamais les actions ni les notes.
+  Le VPN de l'entreprise (proxy Zscaler) bloque Firebase : séance d'équipe hors VPN ou depuis un téléphone.
+  Stack : HTML/CSS/JavaScript vanilla en modules ES, sans framework ni étape de build (dossier site/).
+  Architecture : site/js/core.js et site/js/team-core.js contiennent la logique pure (sans DOM ni Firebase),
+  testée avec Node.js ; site/js/team-store.js est le seul module qui parle à Firebase.
+  Thème clair / sombre mémorisé sous la même clé que la boîte à outils (agileroy.github.io/outils/).
+  Tests : lanceur intégré de Node.js (npm test), à faire évoluer avec chaque changement de comportement ;
+  la publication GitHub Actions est bloquée si un test échoue.
