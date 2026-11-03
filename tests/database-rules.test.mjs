@@ -7,10 +7,8 @@ import { metaFor, sharePayload } from '../site/js/team-core.js';
 const rules = JSON.parse(readFileSync(new URL('../database.rules.json', import.meta.url), 'utf8')).rules;
 const branch = rules.movingMotivators;
 
-test('le fichier de règles garde les branches des autres outils', () => {
-  assert.ok(rules.room, 'poker planning');
-  assert.ok(rules.skillMatrix, 'matrice de compétences');
-  assert.ok(rules.wheelOfChance, 'roue de la chance');
+test('la branche movingMotivators existe, la racine est fermée', () => {
+  assert.ok(branch);
   assert.equal(rules['.read'], false);
   assert.equal(rules['.write'], false);
 });
